@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/modules/ingestion/normalizers/hacker-news.normalizer.test.ts",
+    "ingest:hacker-news": "tsx scripts/ingest-hacker-news.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev"
   },
@@ -26,6 +28,7 @@
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.3.0",
     "prisma": "^7.9.1",
+    "tsx": "^4.23.11",
     "typescript": "^5.9.3"
   }
 }

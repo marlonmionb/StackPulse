@@ -59,6 +59,28 @@ Prisma 7 keeps the database URL in `prisma.config.ts` and uses its official SQLi
 
 The domain modules are boundaries for future features, not framework layers. Repositories and services will be introduced only when concrete behavior requires them.
 
+## Hacker News ingestion
+
+The ingestion command retrieves the current top stories from the official Hacker News API, fetches at most 30 story details with limited concurrency, normalizes valid external links, and stores new URLs as `SourceItem` records.
+
+Set `HN_INGESTION_LIMIT` in `.env` to an integer from 1 to 100 to change the number of top stories inspected:
+
+```env
+HN_INGESTION_LIMIT=30
+```
+
+Run ingestion manually:
+
+```bash
+npm run ingest:hacker-news
+```
+
+Repeated executions are safe: URLs already present in SQLite are skipped. You can inspect stored data with Prisma Studio:
+
+```bash
+npx prisma studio
+```
+
 ## Quality checks
 
 ```bash
