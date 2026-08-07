@@ -35,7 +35,7 @@ IngestionService and persistence
 
 Each source has its own adapter, such as the implemented `HackerNewsSource` and `RssSource`, with a future `GitHubSource` following the same boundary if needed. Provider response types and RSS/Atom parsing details remain inside their source boundary. The rest of the application consumes normalized data.
 
-The current ingestion service removes duplicate URLs within a run, checks existing `SourceItem` URLs, and inserts only new records. Semantic deduplication is not implemented.
+The ingestion service applies source-independent deterministic deduplication before persistence. It prioritizes exact URLs, then canonical URLs that remove fragments, common tracking parameters, and safe non-root trailing slashes. Original URLs remain available as source links, while new records store a uniquely indexed canonical representation. Existing records without a canonical value are compared by canonicalizing their original URL at ingestion time. Title normalization is available as a reusable comparison primitive but is not used to discard records. Semantic deduplication is not implemented.
 
 ## Persistence
 

@@ -7,15 +7,16 @@ datasource db {
 }
 
 model SourceItem {
-  id          String   @id @default(cuid())
-  title       String
-  url         String   @unique
-  source      String
-  summary     String?
-  author      String?
-  publishedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  title        String
+  url          String   @unique
+  canonicalUrl String?  @unique
+  source       String
+  summary      String?
+  author       String?
+  publishedAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Topic {

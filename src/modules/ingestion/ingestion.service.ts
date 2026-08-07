@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db/prisma";
 import type { NormalizedSourceItem } from "./normalized-source-item";
 import type { ContentSource } from "./sources/content-source";
+import { selectNewSourceItems } from "./deduplication";
 
 export type IngestionSummary = {
   fetched: number;
@@ -23,16 +24,10 @@ export class IngestionService<T> {
       .map(this.normalize)
       .filter((item): item is NormalizedSourceItem => item !== null);
 
-    const uniqueItems = [
-      ...new Map(normalizedItems.map((item) => [item.url, item])).values(),
-    ];
-
     const existingItems = await prisma.sourceItem.findMany({
-      where: { url: { in: uniqueItems.map((item) => item.url) } },
-      select: { url: true },
+      select: { url: true, canonicalUrl: true },
     });
-    const existingUrls = new Set(existingItems.map((item) => item.url));
-    const newItems = uniqueItems.filter((item) => !existingUrls.has(item.url));
+    const newItems = selectNewSourceItems(normalizedItems, existingItems);
 
     const result = await prisma.sourceItem.createMany({ data: newItems });
 

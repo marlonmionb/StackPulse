@@ -19,7 +19,8 @@ Checkboxes describe repository state, not planned dates or estimates.
 - [x] Persistence and exact-URL duplicate handling
 - [x] RSS source
 - [x] Second-source normalization
-- [ ] Improved or semantic deduplication
+- [x] Improved deterministic URL deduplication
+- [ ] Semantic deduplication
 
 ## AI
 
