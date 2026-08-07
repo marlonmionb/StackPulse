@@ -1,6 +1,6 @@
 # StackPulse
 
-StackPulse is a personal content-intelligence platform for discovering, understanding, and turning technical topics into reviewed content. The current version includes the architectural foundation and manual Hacker News ingestion; AI, publishing, authentication, and analytics are not implemented.
+StackPulse is a personal content-intelligence platform for discovering, understanding, and turning technical topics into reviewed content. The current version includes the architectural foundation and manual Hacker News and RSS ingestion; AI, publishing, authentication, and analytics are not implemented.
 
 ## Current stack
 
@@ -48,7 +48,7 @@ Then open `http://localhost:3000`.
 ## Initial architecture
 
 - `src/app`: routes, layouts, and UI built with the Next.js App Router.
-- `src/modules/ingestion`: collection, normalization, and persistence of external content; Hacker News is currently implemented.
+- `src/modules/ingestion`: collection, normalization, and persistence of external content; Hacker News and RSS/Atom feeds are implemented.
 - `src/modules/topics`: future topic discovery, ranking, and selection.
 - `src/modules/posts`: future drafting and human-review workflows.
 - `src/modules/analytics`: reserved boundary; intentionally empty of domain logic.
@@ -87,6 +87,24 @@ Repeated executions are safe: URLs already present in SQLite are skipped. You ca
 ```bash
 npx prisma studio
 ```
+
+## RSS ingestion
+
+RSS ingestion reads multiple RSS 2.0 or Atom feeds, normalizes their entries into the same `SourceItem` format, and uses the same exact-URL duplicate protection as Hacker News. `fast-xml-parser` is used because it is a small, established XML parser with TypeScript support; feed-specific shape handling stays in the RSS adapter.
+
+Configure a comma-separated list of feed URLs in `.env`. The example starts with three technical feeds:
+
+```env
+RSS_FEED_URLS="https://blog.cloudflare.com/rss/,https://github.blog/changelog/feed/,https://web.dev/feed.xml"
+```
+
+Run ingestion manually:
+
+```bash
+npm run ingest:rss
+```
+
+One unavailable or malformed feed is logged and skipped without preventing the other configured feeds from being ingested. Missing authors, summaries, and publication dates are accepted; invalid dates are omitted.
 
 ## Quality checks
 

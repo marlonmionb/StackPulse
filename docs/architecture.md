@@ -33,7 +33,7 @@ NormalizedSourceItem
 IngestionService and persistence
 ```
 
-Each source may have its own adapter, such as the implemented `HackerNewsSource` or future `RSSSource` and `GitHubSource` adapters. Provider response types remain inside their source boundary. The rest of the application consumes normalized data.
+Each source has its own adapter, such as the implemented `HackerNewsSource` and `RssSource`, with a future `GitHubSource` following the same boundary if needed. Provider response types and RSS/Atom parsing details remain inside their source boundary. The rest of the application consumes normalized data.
 
 The current ingestion service removes duplicate URLs within a run, checks existing `SourceItem` URLs, and inserts only new records. Semantic deduplication is not implemented.
 

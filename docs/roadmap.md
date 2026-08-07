@@ -17,8 +17,8 @@ Checkboxes describe repository state, not planned dates or estimates.
 - [x] Hacker News normalization
 - [x] Reusable content-source contract
 - [x] Persistence and exact-URL duplicate handling
-- [ ] RSS source
-- [ ] Second-source normalization
+- [x] RSS source
+- [x] Second-source normalization
 - [ ] Improved or semantic deduplication
 
 ## AI
