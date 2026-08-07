@@ -5,6 +5,7 @@ import {
   normalizeTitle,
   selectNewSourceItems,
 } from "./deduplication";
+import { ContentType } from "./content-type";
 
 describe("canonicalizeUrl", () => {
   it("removes common tracking parameters while preserving meaningful ones", () => {
@@ -75,11 +76,17 @@ describe("normalizeTitle", () => {
 describe("selectNewSourceItems", () => {
   it("is idempotent across equivalent URLs and persisted records", () => {
     const candidates = [
-      { title: "Original", url: "https://example.com/article", source: "rss" },
+      {
+        title: "Original",
+        url: "https://example.com/article",
+        source: "rss",
+        contentType: ContentType.ARTICLE,
+      },
       {
         title: "Tracked",
         url: "https://example.com/article/?utm_source=hackernews",
         source: "hacker-news",
+        contentType: ContentType.ARTICLE,
       },
     ];
 
@@ -95,7 +102,14 @@ describe("selectNewSourceItems", () => {
 
   it("compares legacy records by canonicalizing their original URL", () => {
     const result = selectNewSourceItems(
-      [{ title: "Item", url: "https://example.com/item", source: "rss" }],
+      [
+        {
+          title: "Item",
+          url: "https://example.com/item",
+          source: "rss",
+          contentType: ContentType.ARTICLE,
+        },
+      ],
       [
         {
           url: "https://example.com/item/?utm_campaign=old",

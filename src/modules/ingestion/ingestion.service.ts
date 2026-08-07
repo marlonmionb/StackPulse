@@ -1,7 +1,11 @@
 import { prisma } from "@/lib/db/prisma";
 import type { NormalizedSourceItem } from "./normalized-source-item";
 import type { ContentSource } from "./sources/content-source";
-import { selectNewSourceItems } from "./deduplication";
+import {
+  selectNewSourceItems,
+  type DeduplicatedSourceItem,
+} from "./deduplication";
+import { detectContentType } from "./content-type";
 
 export type IngestionSummary = {
   fetched: number;
@@ -12,10 +16,20 @@ export type IngestionSummary = {
 
 type Normalizer<T> = (item: T) => NormalizedSourceItem | null;
 
+type SourceItemPersistence = {
+  findMany(args: {
+    select: { url: true; canonicalUrl: true };
+  }): Promise<Array<{ url: string; canonicalUrl: string | null }>>;
+  createMany(args: {
+    data: DeduplicatedSourceItem[];
+  }): Promise<{ count: number }>;
+};
+
 export class IngestionService<T> {
   constructor(
     private readonly source: ContentSource<T>,
     private readonly normalize: Normalizer<T>,
+    private readonly sourceItems: SourceItemPersistence = prisma.sourceItem,
   ) {}
 
   async run(): Promise<IngestionSummary> {
@@ -23,13 +37,17 @@ export class IngestionService<T> {
     const normalizedItems = rawItems
       .map(this.normalize)
       .filter((item): item is NormalizedSourceItem => item !== null);
+    const classifiedItems = normalizedItems.map((item) => ({
+      ...item,
+      contentType: detectContentType(item.url),
+    }));
 
-    const existingItems = await prisma.sourceItem.findMany({
+    const existingItems = await this.sourceItems.findMany({
       select: { url: true, canonicalUrl: true },
     });
-    const newItems = selectNewSourceItems(normalizedItems, existingItems);
+    const newItems = selectNewSourceItems(classifiedItems, existingItems);
 
-    const result = await prisma.sourceItem.createMany({ data: newItems });
+    const result = await this.sourceItems.createMany({ data: newItems });
 
     return {
       fetched: rawItems.length,

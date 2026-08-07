@@ -30,12 +30,16 @@ Normalizer
         ↓
 NormalizedSourceItem
         ↓
+Deterministic content-type detection
+        ↓
 IngestionService and persistence
 ```
 
 Each source has its own adapter, such as the implemented `HackerNewsSource` and `RssSource`, with a future `GitHubSource` following the same boundary if needed. Provider response types and RSS/Atom parsing details remain inside their source boundary. The rest of the application consumes normalized data.
 
 The ingestion service applies source-independent deterministic deduplication before persistence. It prioritizes exact URLs, then canonical URLs that remove fragments, common tracking parameters, and safe non-root trailing slashes. Original URLs remain available as source links, while new records store a uniquely indexed canonical representation. Existing records without a canonical value are compared by canonicalizing their original URL at ingestion time. Title normalization is available as a reusable comparison primitive but is not used to discard records. Semantic deduplication is not implemented.
+
+Content type is detected deterministically immediately after normalization and before persistence. YouTube hostnames are classified as `VIDEO`; other valid HTTP(S) links are currently `ARTICLE`, and malformed or unsupported URLs are `UNKNOWN`. Video links remain persisted, but topic discovery and ranking must exclude them until explicit video-content extraction support exists. Future transcription or caption ingestion may change that eligibility rule; no such extraction is currently implemented.
 
 ## Persistence
 

@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "SourceItem" ADD COLUMN "contentType" TEXT NOT NULL DEFAULT 'UNKNOWN';

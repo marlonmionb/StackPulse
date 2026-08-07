@@ -37,7 +37,7 @@ export function normalizeTitle(value: string): string {
     .replace(/[‐‑‒–—―]/g, "-");
 }
 
-export type DeduplicatedSourceItem = NormalizedSourceItem & {
+export type DeduplicatedSourceItem = ClassifiedSourceItem & {
   canonicalUrl: string;
 };
 
@@ -47,10 +47,10 @@ type ExistingSourceItemIdentity = {
 };
 
 export function selectNewSourceItems(
-  items: NormalizedSourceItem[],
+  items: ClassifiedSourceItem[],
   existingItems: ExistingSourceItemIdentity[],
 ): DeduplicatedSourceItem[] {
-  const uniqueItemsByCanonicalUrl = new Map<string, NormalizedSourceItem>();
+  const uniqueItemsByCanonicalUrl = new Map<string, ClassifiedSourceItem>();
 
   for (const item of items) {
     const canonicalUrl = canonicalizeUrl(item.url);
@@ -75,4 +75,4 @@ export function selectNewSourceItems(
       !existingCanonicalUrls.has(item.canonicalUrl),
   );
 }
-import type { NormalizedSourceItem } from "./normalized-source-item";
+import type { ClassifiedSourceItem } from "./normalized-source-item";

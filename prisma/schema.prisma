@@ -7,16 +7,17 @@ datasource db {
 }
 
 model SourceItem {
-  id           String   @id @default(cuid())
+  id           String      @id @default(cuid())
   title        String
-  url          String   @unique
-  canonicalUrl String?  @unique
+  url          String      @unique
+  canonicalUrl String?     @unique
   source       String
+  contentType  ContentType @default(UNKNOWN)
   summary      String?
   author       String?
   publishedAt  DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 }
 
 model Topic {
@@ -74,4 +75,10 @@ enum PostStatus {
 enum AiUsageStatus {
   SUCCESS
   FAILURE
+}
+
+enum ContentType {
+  ARTICLE
+  VIDEO
+  UNKNOWN
 }
