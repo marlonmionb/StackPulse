@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model SourceItem {
+  id          String   @id @default(cuid())
+  title       String
+  url         String   @unique
+  source      String
+  summary     String?
+  author      String?
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Topic {
+  id          String      @id @default(cuid())
+  title       String
+  description String?
+  score       Float?
+  status      TopicStatus @default(DISCOVERED)
+  posts       Post[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Post {
+  id          String     @id @default(cuid())
+  content     String
+  status      PostStatus @default(DRAFT)
+  topicId     String?
+  topic       Topic?     @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  publishedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([topicId])
+}
+
+enum TopicStatus {
+  DISCOVERED
+  SELECTED
+  ARCHIVED
+}
+
+enum PostStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  PUBLISHED
+  ARCHIVED
+}
