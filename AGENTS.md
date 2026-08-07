@@ -12,7 +12,7 @@ StackPulse is a personal developer content-intelligence platform. Its purpose is
 - eventually publish approved content to LinkedIn;
 - analyze historical content performance.
 
-Hacker News ingestion is implemented. AI, publishing, authentication, scheduling, and analytics are not implemented.
+Hacker News and RSS ingestion plus the observable OpenAI request foundation are implemented. Production AI features, publishing, authentication, scheduling, and analytics are not implemented.
 
 ## Current stack
 
@@ -21,7 +21,7 @@ Hacker News ingestion is implemented. AI, publishing, authentication, scheduling
 - Node.js
 - Prisma ORM with SQLite
 - ESLint and the Node.js test runner via `tsx`
-- OpenAI API may be added later; it is not currently integrated
+- Official OpenAI Node.js SDK behind a shared server-side request boundary
 
 ## Engineering principles
 

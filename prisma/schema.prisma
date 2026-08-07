@@ -43,6 +43,20 @@ model Post {
   @@index([topicId])
 }
 
+model AiUsage {
+  id               String        @id @default(cuid())
+  feature          String
+  model            String
+  inputTokens      Int           @default(0)
+  outputTokens     Int           @default(0)
+  estimatedCostUsd Float?
+  durationMs       Int
+  status           AiUsageStatus
+  createdAt        DateTime      @default(now())
+
+  @@index([createdAt, status])
+}
+
 enum TopicStatus {
   DISCOVERED
   SELECTED
@@ -55,4 +69,9 @@ enum PostStatus {
   APPROVED
   PUBLISHED
   ARCHIVED
+}
+
+enum AiUsageStatus {
+  SUCCESS
+  FAILURE
 }

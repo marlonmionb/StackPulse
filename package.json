@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/modules/ingestion/**/*.test.ts",
+    "test": "tsx --test \"src/**/*.test.ts\"",
+    "ai:smoke": "tsx scripts/ai-smoke.ts",
     "ingest:hacker-news": "tsx scripts/ingest-hacker-news.ts",
     "ingest:rss": "tsx scripts/ingest-rss.ts",
     "db:generate": "prisma generate",
@@ -20,6 +21,7 @@
     "dotenv": "^17.4.2",
     "fast-xml-parser": "^5.10.1",
     "next": "^16.3.0",
+    "openai": "^7.4.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

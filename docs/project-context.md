@@ -50,4 +50,4 @@ AI should be split into independent, observable tasks rather than implemented as
 - technical review;
 - performance analysis.
 
-Different stages may use different models and token budgets. No AI integration currently exists.
+Different stages may use different models and token budgets. A shared observable OpenAI request boundary now exists, but none of these production AI stages is implemented yet.

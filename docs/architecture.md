@@ -47,7 +47,11 @@ A future migration to PostgreSQL can be considered if requirements change, such 
 
 AI must not handle deterministic operations such as renaming fields, parsing timestamps, validating required fields, or obvious exact-URL duplicate checks. These belong in TypeScript. AI should be reserved for semantic or judgment-heavy work such as ranking, research, drafting, and review.
 
-No AI client or AI module exists yet.
+The shared server-side AI boundary lives in `src/lib/ai`. It owns a lazily created official OpenAI SDK client, environment configuration, provider-response usage mapping, local pricing, usage persistence, and the monthly budget preflight. Feature modules call `executeAiRequest` with a feature name, input, and their own output-token limit; they may override the configured default model only for a concrete need. This is an application-owned request boundary, not an agent or workflow framework.
+
+`OPENAI_API_KEY`, `OPENAI_DEFAULT_MODEL`, and `AI_MONTHLY_BUDGET_USD` are required for AI requests. Keeping the key in server-only code prevents client bundles from receiving it. Model pricing is a small explicit table of per-million input and output token prices. Unknown model prices are rejected before a provider call, and the table must be updated manually when OpenAI pricing changes.
+
+Before each provider call, the boundary sums successful estimated cost during the current UTC calendar month. A call is rejected if spending has already reached the configured application budget. This preflight is deliberately simple and independently testable; it is not a transactional reservation, cannot know a request's final cost in advance, and does not replace provider-side billing controls.
 
 ## Human in the loop
 
@@ -61,13 +65,6 @@ It also contains `ARCHIVED`. This enum prepares the intended direction, but no p
 
 ## Cost observability
 
-Future AI integration should record:
+Each attempted provider request creates a minimal `AiUsage` record containing its feature, model, input/output token counts, estimated USD cost, duration, success/failure status, and request timestamp. Total tokens remain available in the application result and are derived from the persisted input/output counts when needed. Failed provider requests use zero token counts and no cost estimate because actual usage is unavailable.
 
-- model;
-- feature or stage;
-- input tokens;
-- output tokens;
-- estimated cost;
-- timestamps.
-
-The application may later enforce its own monthly AI budget. Neither usage tracking nor budget enforcement is implemented now.
+Prompts, completions, provider payloads, conversations, and agent state are intentionally excluded. The additive model supports historical cost reporting and budget enforcement across the independent AI stages planned for StackPulse without coupling those stages to ingestion or content modules.

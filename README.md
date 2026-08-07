@@ -1,6 +1,6 @@
 # StackPulse
 
-StackPulse is a personal content-intelligence platform for discovering, understanding, and turning technical topics into reviewed content. The current version includes the architectural foundation and manual Hacker News and RSS ingestion; AI, publishing, authentication, and analytics are not implemented.
+StackPulse is a personal content-intelligence platform for discovering, understanding, and turning technical topics into reviewed content. The current version includes manual Hacker News and RSS ingestion plus the observable OpenAI integration foundation. No production AI feature, publishing, authentication, or analytics is implemented yet.
 
 ## Current stack
 
@@ -53,6 +53,7 @@ Then open `http://localhost:3000`.
 - `src/modules/posts`: future drafting and human-review workflows.
 - `src/modules/analytics`: reserved boundary; intentionally empty of domain logic.
 - `src/lib/db`: shared database infrastructure, including the development-safe Prisma Client singleton.
+- `src/lib/ai`: shared server-side OpenAI boundary, local pricing, usage persistence, and internal budget enforcement.
 - `prisma`: database schema and migrations.
 
 Prisma 7 keeps the database URL in `prisma.config.ts` and uses its official SQLite driver adapter at runtime.
@@ -113,3 +114,27 @@ npm run typecheck
 npm run lint
 npm run build
 ```
+
+## OpenAI integration foundation
+
+AI stages must call the shared server-side boundary in `src/lib/ai` instead of constructing SDK clients in feature modules. The boundary supports a default model with an optional per-request override and requires every caller to choose a task-appropriate `maxOutputTokens` value. It records the feature, model, input/output tokens, estimated cost, duration, status, and request time in `AiUsage`; prompts and model responses are not persisted.
+
+Configure the integration in `.env`:
+
+```env
+OPENAI_API_KEY=your-key-here
+OPENAI_DEFAULT_MODEL=gpt-4o-mini
+AI_MONTHLY_BUDGET_USD=5
+```
+
+All three values are required before an AI request. `OPENAI_API_KEY` is read only by server-side code. `AI_MONTHLY_BUDGET_USD` is an application-side safeguard: before a request, StackPulse sums successful estimated usage in the current UTC calendar month and refuses the call when spending has reached the budget. It does not replace provider-side billing limits, and a request that begins below the budget can exceed the remaining amount because its final token usage is not known in advance.
+
+Supported prices live in one local pricing table and are expressed per million input/output tokens. Unknown models fail explicitly. Pricing is not fetched at runtime and must be reviewed manually whenever OpenAI changes its prices.
+
+After applying migrations, verify the infrastructure manually with an intentionally small request:
+
+```bash
+npm run ai:smoke
+```
+
+The smoke command requires a real API key, uses a 16-token output limit, persists usage, and prints a concise response, token count, and cost estimate. It is only an integration check and does not perform topic ranking.
