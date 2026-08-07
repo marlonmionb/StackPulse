@@ -15,6 +15,7 @@ Checkboxes describe repository state, not planned dates or estimates.
 
 - [x] Hacker News source
 - [x] Hacker News normalization
+- [x] Targeted Hacker News Search ingestion
 - [x] Reusable content-source contract
 - [x] Persistence and exact-URL duplicate handling
 - [x] RSS source

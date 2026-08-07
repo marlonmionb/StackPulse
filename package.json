@@ -7,10 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit --incremental false",
     "test": "tsx --test \"src/**/*.test.ts\"",
     "ai:smoke": "tsx scripts/ai-smoke.ts",
     "ingest:hacker-news": "tsx scripts/ingest-hacker-news.ts",
+    "ingest:hn-search": "tsx scripts/ingest-hn-search.ts",
     "ingest:rss": "tsx scripts/ingest-rss.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev"

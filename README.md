@@ -1,6 +1,6 @@
 # StackPulse
 
-StackPulse is a personal content-intelligence platform for discovering, understanding, and turning technical topics into reviewed content. The current version includes manual Hacker News and RSS ingestion plus the observable OpenAI integration foundation. No production AI feature, publishing, authentication, or analytics is implemented yet.
+StackPulse is a personal content-intelligence platform for discovering, understanding, and turning technical topics into reviewed content. The current version includes manual ingestion from the official Hacker News API, targeted Hacker News Search, and RSS, plus the observable OpenAI integration foundation. No production AI feature, publishing, authentication, or analytics is implemented yet.
 
 ## Current stack
 
@@ -48,7 +48,7 @@ Then open `http://localhost:3000`.
 ## Initial architecture
 
 - `src/app`: routes, layouts, and UI built with the Next.js App Router.
-- `src/modules/ingestion`: collection, normalization, and persistence of external content; Hacker News and RSS/Atom feeds are implemented.
+- `src/modules/ingestion`: collection, normalization, and persistence of external content; official Hacker News, targeted Hacker News Search, and RSS/Atom sources are implemented.
 - `src/modules/topics`: future topic discovery, ranking, and selection.
 - `src/modules/posts`: future drafting and human-review workflows.
 - `src/modules/analytics`: reserved boundary; intentionally empty of domain logic.
@@ -88,6 +88,31 @@ Repeated executions are safe: URLs already present in SQLite are skipped. You ca
 ```bash
 npx prisma studio
 ```
+
+## Hacker News Search ingestion
+
+Hacker News Search uses the external HN Search API powered by Algolia to discover recent stories matching configured technical interests. It complements rather than replaces official Hacker News ingestion:
+
+```text
+Official HN API       → general discovery / current Hacker News feeds
+HN Search / Algolia  → targeted discovery based on configured technical interests
+```
+
+Configure at least one comma-separated topic. Empty entries are ignored; the lookback and per-topic result limit default to 7 days and 10 results:
+
+```env
+HN_SEARCH_TOPICS="react,typescript,spring boot,postgresql,distributed systems"
+HN_SEARCH_LOOKBACK_DAYS=7
+HN_SEARCH_RESULTS_PER_TOPIC=10
+```
+
+Run targeted ingestion manually:
+
+```bash
+npm run ingest:hn-search
+```
+
+StackPulse makes one `search_by_date` request per topic, restricted to stories newer than the shared lookback cutoff. One failed topic is logged without discarding successful topic results. Valid external links enter the same classification, canonical URL deduplication, and Prisma persistence pipeline as official Hacker News and RSS items. A story matching multiple queries is therefore stored only once. HN Search is an external HTTP API over Hacker News content, not an Algolia or Firebase application dependency.
 
 ## RSS ingestion
 
