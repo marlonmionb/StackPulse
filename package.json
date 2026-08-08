@@ -12,6 +12,7 @@
     "ai:smoke": "tsx scripts/ai-smoke.ts",
     "relevance:evaluate": "tsx scripts/evaluate-technical-relevance.ts",
     "metadata:enrich": "tsx scripts/enrich-source-metadata.ts",
+    "content-type:backfill": "tsx scripts/backfill-content-types.ts",
     "ingest:hacker-news": "tsx scripts/ingest-hacker-news.ts",
     "ingest:hn-search": "tsx scripts/ingest-hn-search.ts",
     "ingest:rss": "tsx scripts/ingest-rss.ts",

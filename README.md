@@ -158,6 +158,15 @@ npm run metadata:enrich -- --limit=20
 
 Terminal statuses are `ENRICHED`, `NO_METADATA`, and `FAILED`; they are not retried on normal runs. `--force` deliberately retries `NO_METADATA` and `FAILED`, but still skips `ENRICHED` records and any record that now has a useful summary. Developers can then deliberately re-evaluate affected relevance results with `npm run relevance:evaluate -- --force`; the two stages are not coupled.
 
+Legacy records whose content type is still `UNKNOWN` can be classified with the same deterministic URL rules used during ingestion:
+
+```bash
+npm run content-type:backfill
+npm run content-type:backfill -- --limit=20
+```
+
+The command does not fetch URLs or run AI. It updates only `contentType` on `UNKNOWN` records; unsupported URLs remain `UNKNOWN`, and already classified records are untouched.
+
 The fetcher accepts only HTML, checks the initial hostname and each redirect against obvious local/private hosts and resolved private IP addresses, limits redirects to five, times out the whole request, and streams at most the configured byte ceiling. This is focused SSRF risk reduction, not a network sandbox: DNS can change between validation and connection, and public servers can proxy private resources. Production deployment should also enforce outbound network policy.
 
 ## Quality checks
