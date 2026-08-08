@@ -11,6 +11,7 @@
     "test": "tsx --test \"src/**/*.test.ts\"",
     "ai:smoke": "tsx scripts/ai-smoke.ts",
     "relevance:evaluate": "tsx scripts/evaluate-technical-relevance.ts",
+    "topics:discover": "tsx scripts/discover-topics.ts",
     "metadata:enrich": "tsx scripts/enrich-source-metadata.ts",
     "content-type:backfill": "tsx scripts/backfill-content-types.ts",
     "ingest:hacker-news": "tsx scripts/ingest-hacker-news.ts",

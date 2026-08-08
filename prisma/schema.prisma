@@ -25,6 +25,7 @@ model SourceItem {
   technicalRelevanceEvaluatedAt DateTime?
   createdAt                     DateTime                 @default(now())
   updatedAt                     DateTime                 @updatedAt
+  topics                        TopicSourceItem[]
 
   @@index([technicalRelevanceEvaluatedAt, contentType])
   @@index([technicalRelevant, publishedAt])
@@ -32,14 +33,33 @@ model SourceItem {
 }
 
 model Topic {
-  id          String      @id @default(cuid())
-  title       String
-  description String?
-  score       Float?
-  status      TopicStatus @default(DISCOVERED)
-  posts       Post[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id                    String            @id @default(cuid())
+  title                 String
+  description           String?
+  score                 Float?
+  profileRelevanceScore Float?
+  technicalDepthScore   Float?
+  freshnessScore        Float?
+  contentPotentialScore Float?
+  rankingReason         String?
+  discoverySignature    String?           @unique
+  status                TopicStatus       @default(DISCOVERED)
+  discoveredAt          DateTime           @default(now())
+  sourceItems           TopicSourceItem[]
+  posts                 Post[]
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+}
+
+model TopicSourceItem {
+  topicId      String
+  sourceItemId String
+  topic        Topic      @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  sourceItem   SourceItem @relation(fields: [sourceItemId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@id([topicId, sourceItemId])
+  @@index([sourceItemId])
 }
 
 model Post {

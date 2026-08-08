@@ -1,7 +1,7 @@
 # Topics
 
-Future boundary for discovering, ranking, and selecting technical topics.
+Implements bounded Topic Discovery, semantic grouping, profile-aware ranking,
+strict output validation, and persisted Topic-to-SourceItem relationships.
+Video items remain excluded through the reusable candidate-selection boundary.
 
-Video links are ingested and stored, but excluded from AI topic discovery/ranking until video-content extraction is explicitly supported. `isEligibleForTopicDiscovery` is the reusable selection rule for future topic discovery. Unknown content preserves the current eligible behavior.
-
-Video transcription or caption ingestion may be added later, but is not currently supported.
+This module does not perform Topic Research, drafting, publishing, or analytics.

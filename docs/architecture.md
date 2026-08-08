@@ -11,7 +11,7 @@ src/
     ingestion/          # implemented source collection and normalization
     metadata-enrichment/ # implemented lightweight HTML description enrichment
     technical-relevance/ # implemented semantic software relevance gate
-    topics/             # reserved for future topic workflows
+    topics/             # implemented discovery, grouping, ranking, and persistence
     posts/              # reserved for future content workflows
     analytics/          # reserved for future performance analysis
   lib/
@@ -51,7 +51,7 @@ Metadata enrichment is source-independent and remains separate from ingestion an
 
 ```text
 Ingestion → Normalization → Deduplication → Content Type Classification
-    → Metadata Enrichment → Technical Relevance → future Topic Discovery
+    → Metadata Enrichment → Technical Relevance → Topic Discovery / Ranking
 ```
 
 The manual enrichment service selects `ARTICLE` records with no non-whitespace summary. Normal runs select only the `PENDING` state. It performs no AI request and never replaces a summary supplied by Hacker News, RSS, or another source. A transaction rechecks the current summary before persisting, so concurrently added source context is preserved.
@@ -72,7 +72,17 @@ The manual evaluator selects non-video `SourceItem` records whose `technicalRele
 
 The model returns a semantic boolean and a 0-10 score. Application eligibility requires all of: the model assessment is relevant, the score is at least 6, and the category is not `NON_SOFTWARE`. The final boolean is persisted as `technicalRelevant` together with the score, category, reason, and evaluation timestamp. The timestamp distinguishes unevaluated content from evaluated-and-rejected content and prevents repeat charges unless a developer explicitly uses `--force`.
 
-`buildTopicDiscoveryCandidateWhere` provides the reusable future query boundary: candidates must be non-video, evaluated, and `technicalRelevant = true`, with an optional publication-date cutoff. It does not perform Topic Discovery or ranking.
+`buildTopicDiscoveryCandidateWhere` provides the reusable query boundary: candidates must be non-video, evaluated, and `technicalRelevant = true`, with a publication-date cutoff supplied by Topic Discovery. It does not duplicate Technical Relevance threshold logic.
+
+## Topic Discovery and ranking
+
+Topic Discovery combines multiple eligible SourceItems into content opportunities. It selects only through the Technical Relevance candidate boundary, applies a configurable recent lookback and item ceiling, and sends one concise metadata payload to `gpt-5.4-nano` where practical. The payload contains ids, titles, optional summaries, technical category and relevance score, source, publication date, and hostname. It contains no article body, HTML, Prisma metadata, or relevance-reason text, and the stage performs no external fetch.
+
+The dedicated prompt distinguishes the broad relevance gate from discovery and ranking. Strict Structured Outputs provide a bounded topic array with title, description, overall score, profile relevance, technical depth, freshness, content potential, ranking reason, and supporting SourceItem ids. Runtime validation independently enforces score bounds, known support ids, non-empty support, duplicate-reference removal, and the maximum topic count. Duplicate topic entries with an identical support set are collapsed to the highest-scoring result before persistence.
+
+Profile interests live centrally in Topic Discovery configuration and default to the current React, TypeScript, Java/Spring, frontend/backend/full-stack, API, database/PostgreSQL, distributed systems/Kafka, AWS/cloud, architecture/system-design, and AI-engineering interests. They are replaceable by future user settings without distributing profile checks through application logic.
+
+`TopicSourceItem` models the many-to-many evidence relationship. Topic score components, ranking reason, discovery timestamp, and `DISCOVERED` lifecycle status are persisted. A SHA-256 signature of the sorted supporting SourceItem ids is unique; an exact rerun updates that Topic and its relationships while preserving its lifecycle status. This deliberately limited strategy does not detect semantically equivalent historical Topics when the supporting set changes. Topic Research, writing, publishing, and analytics remain separate future stages.
 
 Exact and canonical URL comparison also collapses a story returned by several HN Search topics and prevents duplicates between HN Search, official Hacker News, and RSS. Query provenance is intentionally not stored: `SourceItem` has no natural metadata field, and adding schema solely for search terms would add complexity without affecting ingestion behavior.
 

@@ -1,6 +1,6 @@
 # StackPulse
 
-StackPulse is a personal content-intelligence platform for discovering, understanding, and turning technical topics into reviewed content. The current version includes manual ingestion from the official Hacker News API, targeted Hacker News Search, and RSS, lightweight article metadata enrichment, plus an AI Technical Relevance Gate that rejects semantic false positives before future Topic Discovery. Publishing, authentication, analytics, and Topic Discovery are not implemented yet.
+StackPulse is a personal content-intelligence platform for discovering, understanding, and turning technical topics into reviewed content. The current version includes multi-source ingestion, lightweight article metadata enrichment, an AI Technical Relevance Gate, and bounded Topic Discovery, semantic grouping, and profile-aware ranking. Topic Research, publishing, authentication, and analytics are not implemented yet.
 
 ## Current stack
 
@@ -51,7 +51,7 @@ Then open `http://localhost:3000`.
 - `src/modules/ingestion`: collection, normalization, and persistence of external content; official Hacker News, targeted Hacker News Search, and RSS/Atom sources are implemented.
 - `src/modules/metadata-enrichment`: bounded, source-independent HTML description metadata fetching for summary-poor articles.
 - `src/modules/technical-relevance`: batched AI semantic classification and persisted software-engineering eligibility.
-- `src/modules/topics`: future topic discovery, ranking, and selection.
+- `src/modules/topics`: bounded topic candidate selection, semantic grouping, ranking, validation, and persistence.
 - `src/modules/posts`: future drafting and human-review workflows.
 - `src/modules/analytics`: reserved boundary; intentionally empty of domain logic.
 - `src/lib/db`: shared database infrastructure, including the development-safe Prisma Client singleton.
@@ -221,3 +221,32 @@ npm run ai:smoke
 ```
 
 The smoke command requires a real API key, uses a 16-token output limit, persists usage, and prints a concise response, token count, and cost estimate. It is only an integration check and does not perform topic ranking.
+
+## Topic Discovery and Ranking
+
+The stages remain deliberately separate:
+
+```text
+Technical Relevance -> broad software/computing eligibility
+Topic Discovery     -> semantic grouping of eligible SourceItems
+Topic Ranking       -> prioritization as technical content opportunities
+Topic Research      -> future deeper factual research before writing
+```
+
+Topic Discovery reuses the existing eligibility query: candidates must be non-video, evaluated by the Technical Relevance Gate, marked technically eligible, and published within the configured lookback. It never queries unevaluated SourceItems, fetches pages, or sends article bodies. One execution sends at most the configured item count and returns at most the configured topic count.
+
+```env
+TOPIC_DISCOVERY_LOOKBACK_DAYS=7
+TOPIC_DISCOVERY_MAX_ITEMS=50
+TOPIC_DISCOVERY_MAX_TOPICS=10
+TOPIC_DISCOVERY_INTERESTS="React,TypeScript,Java,Spring Boot,PostgreSQL,distributed systems,Kafka,AWS,AI engineering"
+```
+
+```bash
+npm run topics:discover
+npm run topics:discover -- --limit=10
+```
+
+The stage uses `gpt-5.4-nano`, strict Structured Outputs, and a 3,000-token maximum output. It ranks profile relevance, technical depth, freshness, practical/content value, discussion potential, source strength, and novelty/significance. Topics persist with component scores and an explicit many-to-many relationship to supporting SourceItems. A deterministic signature of sorted supporting SourceItem IDs makes an exact repeat update the same Topic; it does not perform semantic historical deduplication when a later run groups a different support set.
+
+All calls pass through the shared budget, pricing, output-token, and `AiUsage` boundary. This stage does not generate hooks, angles, posts, or Topic Research.

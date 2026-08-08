@@ -62,4 +62,4 @@ AI should be split into independent, observable tasks rather than implemented as
 - technical review;
 - performance analysis.
 
-Different stages may use different models and token budgets. All use the shared observable OpenAI request boundary. Ingested content is not automatically AI eligible: non-software matches and videos remain stored while being excluded from future Topic Discovery.
+Different stages may use different models and token budgets. All use the shared observable OpenAI request boundary. Ingested content is not automatically AI eligible: non-software matches and videos remain stored while being excluded from Topic Discovery. Topic Discovery now semantically groups eligible items and ranks opportunities for the centralized developer profile. Topic Research remains a future, independent factual-research stage before writing.
