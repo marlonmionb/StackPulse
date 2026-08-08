@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit --incremental false",
     "test": "tsx --test \"src/**/*.test.ts\"",
     "ai:smoke": "tsx scripts/ai-smoke.ts",
+    "relevance:evaluate": "tsx scripts/evaluate-technical-relevance.ts",
     "ingest:hacker-news": "tsx scripts/ingest-hacker-news.ts",
     "ingest:hn-search": "tsx scripts/ingest-hn-search.ts",
     "ingest:rss": "tsx scripts/ingest-rss.ts",

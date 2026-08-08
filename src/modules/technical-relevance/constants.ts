@@ -1,0 +1,24 @@
+export const TECHNICAL_RELEVANCE_MODEL = "gpt-5.4-nano";
+export const TECHNICAL_RELEVANCE_BATCH_SIZE = 25;
+export const TECHNICAL_RELEVANCE_MAX_OUTPUT_TOKENS = 2_000;
+export const TECHNICAL_RELEVANCE_THRESHOLD = 6;
+export const TECHNICAL_RELEVANCE_FEATURE = "technical-relevance";
+
+export const TECHNICAL_CATEGORIES = [
+  "FRONTEND",
+  "BACKEND",
+  "FULLSTACK",
+  "DATABASE",
+  "CLOUD",
+  "DEVOPS",
+  "ARCHITECTURE",
+  "AI",
+  "SECURITY",
+  "PROGRAMMING_LANGUAGE",
+  "DEVELOPER_TOOLING",
+  "SOFTWARE_ENGINEERING",
+  "OTHER_TECH",
+  "NON_SOFTWARE",
+] as const;
+
+export type TechnicalCategory = (typeof TECHNICAL_CATEGORIES)[number];

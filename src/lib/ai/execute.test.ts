@@ -55,11 +55,16 @@ describe("executeAiRequest", () => {
         feature: "smoke-test",
         input: "sensitive input",
         maxOutputTokens: 16,
+        structuredOutput: {
+          name: "smoke_output",
+          schema: { type: "object", properties: {} },
+        },
       },
       { config, provider, usageStore: store, now: () => times.shift()! },
     );
 
     assert.equal(requests[0].maxOutputTokens, 16);
+    assert.equal(requests[0].structuredOutput?.name, "smoke_output");
     assert.equal(result.usage.totalTokens, 12);
     assert.equal(result.usage.durationMs, 125);
     assert.equal(records.length, 1);

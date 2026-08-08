@@ -1,6 +1,6 @@
 # StackPulse
 
-StackPulse is a personal content-intelligence platform for discovering, understanding, and turning technical topics into reviewed content. The current version includes manual ingestion from the official Hacker News API, targeted Hacker News Search, and RSS, plus the observable OpenAI integration foundation. No production AI feature, publishing, authentication, or analytics is implemented yet.
+StackPulse is a personal content-intelligence platform for discovering, understanding, and turning technical topics into reviewed content. The current version includes manual ingestion from the official Hacker News API, targeted Hacker News Search, and RSS, plus an AI Technical Relevance Gate that rejects semantic false positives before future Topic Discovery. Publishing, authentication, analytics, and Topic Discovery are not implemented yet.
 
 ## Current stack
 
@@ -49,6 +49,7 @@ Then open `http://localhost:3000`.
 
 - `src/app`: routes, layouts, and UI built with the Next.js App Router.
 - `src/modules/ingestion`: collection, normalization, and persistence of external content; official Hacker News, targeted Hacker News Search, and RSS/Atom sources are implemented.
+- `src/modules/technical-relevance`: batched AI semantic classification and persisted software-engineering eligibility.
 - `src/modules/topics`: future topic discovery, ranking, and selection.
 - `src/modules/posts`: future drafting and human-review workflows.
 - `src/modules/analytics`: reserved boundary; intentionally empty of domain logic.
@@ -140,9 +141,30 @@ npm run lint
 npm run build
 ```
 
+## AI Technical Relevance Gate
+
+Ingestion and AI eligibility are intentionally different states. The Technical Relevance Gate is a broad, recall-oriented software/computing filter, not a content-ranking stage: genuinely computing-related but peripheral items should pass with moderate scores. StackPulse stores non-technical articles and videos, but only non-video items evaluated as technically relevant can be selected by future Topic Discovery. Later Topic Discovery and Ranking—not this gate—will assess content value, profile relevance, and priority. The semantic gate handles ambiguous search matches such as React.js versus biological reactivation, Java versus the island, Spring Boot versus the season, and Apache Kafka versus Franz Kafka without keyword blacklists.
+
+Apply the latest Prisma migration, configure the existing OpenAI environment variables, and run:
+
+```bash
+npm run relevance:evaluate
+```
+
+The command selects unevaluated non-video items, sends title and existing summary metadata to `gpt-5.4-nano` in batches of 25, validates strict Structured Outputs, persists the result, and records usage through the shared AI boundary. A score of at least 6, a positive model assessment, and a category other than `NON_SOFTWARE` are required for eligibility. Evaluated records are skipped on later runs, so they are not charged again.
+
+Developers can deliberately overwrite existing evaluations or bound a manual sample:
+
+```bash
+npm run relevance:evaluate -- --force
+npm run relevance:evaluate -- --limit=10
+```
+
+Videos remain stored but are never sent to this classifier. The command does not fetch article bodies, summarize content, transcribe video, or perform Topic Discovery.
+
 ## OpenAI integration foundation
 
-AI stages must call the shared server-side boundary in `src/lib/ai` instead of constructing SDK clients in feature modules. The boundary supports a default model with an optional per-request override and requires every caller to choose a task-appropriate `maxOutputTokens` value. It records the feature, model, input/output tokens, estimated cost, duration, status, and request time in `AiUsage`; prompts and model responses are not persisted.
+AI stages must call the shared server-side boundary in `src/lib/ai` instead of constructing SDK clients in feature modules. The boundary supports a default model with an optional per-request override, optional strict JSON-schema Structured Outputs, and a required task-appropriate `maxOutputTokens` value. It records the feature, model, input/output tokens, estimated cost, duration, status, and request time in `AiUsage`; prompts and model responses are not persisted.
 
 Configure the integration in `.env`:
 

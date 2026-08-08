@@ -7,11 +7,18 @@ export type AiProviderResponse = {
   totalTokens: number;
 };
 
+export type AiStructuredOutput = {
+  name: string;
+  description?: string;
+  schema: Record<string, unknown>;
+};
+
 export type AiProvider = {
   createResponse(request: {
     model: string;
     input: string;
     maxOutputTokens: number;
+    structuredOutput?: AiStructuredOutput;
   }): Promise<AiProviderResponse>;
 };
 
@@ -29,6 +36,17 @@ export function createOpenAiProvider(apiKey: string): AiProvider {
         model: request.model,
         input: request.input,
         max_output_tokens: request.maxOutputTokens,
+        text: request.structuredOutput
+          ? {
+              format: {
+                type: "json_schema",
+                name: request.structuredOutput.name,
+                description: request.structuredOutput.description,
+                schema: request.structuredOutput.schema,
+                strict: true,
+              },
+            }
+          : undefined,
       });
 
       if (!response.usage) {

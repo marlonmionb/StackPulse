@@ -7,17 +7,25 @@ datasource db {
 }
 
 model SourceItem {
-  id           String      @id @default(cuid())
-  title        String
-  url          String      @unique
-  canonicalUrl String?     @unique
-  source       String
-  contentType  ContentType @default(UNKNOWN)
-  summary      String?
-  author       String?
-  publishedAt  DateTime?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  id                            String             @id @default(cuid())
+  title                         String
+  url                           String             @unique
+  canonicalUrl                  String?            @unique
+  source                        String
+  contentType                   ContentType        @default(UNKNOWN)
+  summary                       String?
+  author                        String?
+  publishedAt                   DateTime?
+  technicalRelevant             Boolean?
+  technicalRelevanceScore       Int?
+  technicalCategory             TechnicalCategory?
+  technicalRelevanceReason      String?
+  technicalRelevanceEvaluatedAt DateTime?
+  createdAt                     DateTime           @default(now())
+  updatedAt                     DateTime           @updatedAt
+
+  @@index([technicalRelevanceEvaluatedAt, contentType])
+  @@index([technicalRelevant, publishedAt])
 }
 
 model Topic {
@@ -81,4 +89,21 @@ enum ContentType {
   ARTICLE
   VIDEO
   UNKNOWN
+}
+
+enum TechnicalCategory {
+  FRONTEND
+  BACKEND
+  FULLSTACK
+  DATABASE
+  CLOUD
+  DEVOPS
+  ARCHITECTURE
+  AI
+  SECURITY
+  PROGRAMMING_LANGUAGE
+  DEVELOPER_TOOLING
+  SOFTWARE_ENGINEERING
+  OTHER_TECH
+  NON_SOFTWARE
 }

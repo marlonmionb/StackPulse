@@ -27,6 +27,7 @@ Checkboxes describe repository state, not planned dates or estimates.
 
 - [x] OpenAI client
 - [x] AI usage and cost tracking
+- [x] Technical relevance classification gate
 - [ ] Topic ranking
 - [ ] Topic research
 - [ ] Angle suggestions

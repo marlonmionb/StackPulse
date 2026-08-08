@@ -4,6 +4,7 @@ import { getAiConfig, type AiConfig } from "./config";
 import { AiConfigurationError, AiProviderRequestError } from "./errors";
 import { calculateEstimatedCostUsd, getModelPricing } from "./pricing";
 import type { AiExecutionResult, AiExecutionUsage } from "./types";
+import type { AiStructuredOutput } from "./client";
 import {
   aiUsageRepository,
   type AiUsageStore,
@@ -14,6 +15,7 @@ export type ExecuteAiRequest = {
   input: string;
   maxOutputTokens: number;
   model?: string;
+  structuredOutput?: AiStructuredOutput;
 };
 
 type ExecuteAiDependencies = {
@@ -58,6 +60,7 @@ export async function executeAiRequest(
       model,
       input: request.input,
       maxOutputTokens: request.maxOutputTokens,
+      structuredOutput: request.structuredOutput,
     });
   } catch (error) {
     const durationMs = Math.max(0, now().getTime() - requestedAt.getTime());

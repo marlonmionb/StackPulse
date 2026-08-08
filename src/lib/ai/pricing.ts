@@ -7,6 +7,10 @@ export type ModelPricing = {
 
 // Manually maintained. Update these values when OpenAI pricing changes.
 export const MODEL_PRICING: Readonly<Record<string, ModelPricing>> = {
+  "gpt-5.4-nano": {
+    inputUsdPerMillionTokens: 0.2,
+    outputUsdPerMillionTokens: 1.25,
+  },
   "gpt-4o-mini": {
     inputUsdPerMillionTokens: 0.15,
     outputUsdPerMillionTokens: 0.6,

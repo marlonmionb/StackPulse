@@ -16,6 +16,12 @@ Ingestion
 Normalization
     ↓
 Deduplication
+    |
+    v
+Content Type Classification
+    |
+    v
+Technical Relevance Gate
     ↓
 Topic Discovery / Ranking
     ↓
@@ -40,8 +46,9 @@ Analytics may eventually enrich future topic ranking. The product must also supp
 
 ## AI stages
 
-AI should be split into independent, observable tasks rather than implemented as one autonomous agent. Potential stages include:
+AI should be split into independent, observable tasks rather than implemented as one autonomous agent. The technical relevance classifier is the first implemented production stage. Stages include:
 
+- technical relevance classification;
 - topic ranking;
 - semantic deduplication when deterministic checks are insufficient;
 - topic research;
@@ -50,4 +57,4 @@ AI should be split into independent, observable tasks rather than implemented as
 - technical review;
 - performance analysis.
 
-Different stages may use different models and token budgets. A shared observable OpenAI request boundary now exists, but none of these production AI stages is implemented yet.
+Different stages may use different models and token budgets. All use the shared observable OpenAI request boundary. Ingested content is not automatically AI eligible: non-software matches and videos remain stored while being excluded from future Topic Discovery.

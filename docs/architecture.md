@@ -9,6 +9,7 @@ src/
   app/                  # Next.js routes and UI
   modules/
     ingestion/          # implemented source collection and normalization
+    technical-relevance/ # implemented semantic software relevance gate
     topics/             # reserved for future topic workflows
     posts/              # reserved for future content workflows
     analytics/          # reserved for future performance analysis
@@ -43,6 +44,16 @@ The ingestion service applies source-independent deterministic deduplication bef
 
 Content type is detected deterministically immediately after normalization and before persistence. YouTube hostnames are classified as `VIDEO`; other valid HTTP(S) links are currently `ARTICLE`, and malformed or unsupported URLs are `UNKNOWN`. Video links remain persisted, but topic discovery and ranking must exclude them until explicit video-content extraction support exists. Future transcription or caption ingestion may change that eligibility rule; no such extraction is currently implemented.
 
+## Technical relevance
+
+After deterministic deduplication and content-type detection, a source-independent AI gate separates content meaningfully related to software engineering or closely related computing technology from semantic false positives produced by keyword search. This is a coarse, recall-oriented eligibility gate: adjacent computing infrastructure and hardware may pass with moderate scores, while future Topic Discovery and Ranking will decide content value, profile relevance, and priority. Ingestion still stores every normalized item. `VIDEO` items remain ineligible for AI evaluation, and an article classified as `NON_SOFTWARE` remains stored for auditability but is excluded from future Topic Discovery.
+
+The manual evaluator selects non-video `SourceItem` records whose `technicalRelevanceEvaluatedAt` is null, then sends only id, title, source, hostname, existing summary, and optional publication date to `gpt-5.4-nano`. It uses batches of 25, a 2,000-token output limit, and strict JSON-schema Structured Outputs. Returned IDs, uniqueness, completeness, score bounds, categories, and concise reasons are validated before an entire batch is persisted transactionally. A failed batch remains unevaluated; earlier successful batches remain committed.
+
+The model returns a semantic boolean and a 0-10 score. Application eligibility requires all of: the model assessment is relevant, the score is at least 6, and the category is not `NON_SOFTWARE`. The final boolean is persisted as `technicalRelevant` together with the score, category, reason, and evaluation timestamp. The timestamp distinguishes unevaluated content from evaluated-and-rejected content and prevents repeat charges unless a developer explicitly uses `--force`.
+
+`buildTopicDiscoveryCandidateWhere` provides the reusable future query boundary: candidates must be non-video, evaluated, and `technicalRelevant = true`, with an optional publication-date cutoff. It does not perform Topic Discovery or ranking.
+
 Exact and canonical URL comparison also collapses a story returned by several HN Search topics and prevents duplicates between HN Search, official Hacker News, and RSS. Query provenance is intentionally not stored: `SourceItem` has no natural metadata field, and adding schema solely for search terms would add complexity without affecting ingestion behavior.
 
 ## Persistence
@@ -53,9 +64,9 @@ A future migration to PostgreSQL can be considered if requirements change, such 
 
 ## AI boundary
 
-AI must not handle deterministic operations such as renaming fields, parsing timestamps, validating required fields, or obvious exact-URL duplicate checks. These belong in TypeScript. AI should be reserved for semantic or judgment-heavy work such as ranking, research, drafting, and review.
+AI must not handle deterministic operations such as renaming fields, parsing timestamps, validating required fields, or obvious exact-URL duplicate checks. These belong in TypeScript. AI should be reserved for semantic or judgment-heavy work such as relevance classification, ranking, research, drafting, and review.
 
-The shared server-side AI boundary lives in `src/lib/ai`. It owns a lazily created official OpenAI SDK client, environment configuration, provider-response usage mapping, local pricing, usage persistence, and the monthly budget preflight. Feature modules call `executeAiRequest` with a feature name, input, and their own output-token limit; they may override the configured default model only for a concrete need. This is an application-owned request boundary, not an agent or workflow framework.
+The shared server-side AI boundary lives in `src/lib/ai`. It owns a lazily created official OpenAI SDK client, environment configuration, provider-response usage mapping, local pricing, usage persistence, and the monthly budget preflight. Feature modules call `executeAiRequest` with a feature name, input, and their own output-token limit; they may override the configured default model only for a concrete need and may supply a strict JSON schema for Structured Outputs. This is an application-owned request boundary, not an agent or workflow framework.
 
 `OPENAI_API_KEY`, `OPENAI_DEFAULT_MODEL`, and `AI_MONTHLY_BUDGET_USD` are required for AI requests. Keeping the key in server-only code prevents client bundles from receiving it. Model pricing is a small explicit table of per-million input and output token prices. Unknown model prices are rejected before a provider call, and the table must be updated manually when OpenAI pricing changes.
 
