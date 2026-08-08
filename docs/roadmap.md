@@ -21,7 +21,15 @@ Checkboxes describe repository state, not planned dates or estimates.
 - [x] RSS source
 - [x] Second-source normalization
 - [x] Improved deterministic URL deduplication
+- [x] Deterministic content-type classification
 - [ ] Semantic deduplication
+
+## Metadata enrichment
+
+- [x] Lightweight HTML description metadata enrichment for summary-poor articles
+- [x] Bounded manual enrichment command with explicit retry behavior
+- [x] Focused local/private-network URL protections
+- [ ] Video transcription or metadata extraction
 
 ## AI
 

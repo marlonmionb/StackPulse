@@ -1,6 +1,6 @@
 # StackPulse
 
-StackPulse is a personal content-intelligence platform for discovering, understanding, and turning technical topics into reviewed content. The current version includes manual ingestion from the official Hacker News API, targeted Hacker News Search, and RSS, plus an AI Technical Relevance Gate that rejects semantic false positives before future Topic Discovery. Publishing, authentication, analytics, and Topic Discovery are not implemented yet.
+StackPulse is a personal content-intelligence platform for discovering, understanding, and turning technical topics into reviewed content. The current version includes manual ingestion from the official Hacker News API, targeted Hacker News Search, and RSS, lightweight article metadata enrichment, plus an AI Technical Relevance Gate that rejects semantic false positives before future Topic Discovery. Publishing, authentication, analytics, and Topic Discovery are not implemented yet.
 
 ## Current stack
 
@@ -49,6 +49,7 @@ Then open `http://localhost:3000`.
 
 - `src/app`: routes, layouts, and UI built with the Next.js App Router.
 - `src/modules/ingestion`: collection, normalization, and persistence of external content; official Hacker News, targeted Hacker News Search, and RSS/Atom sources are implemented.
+- `src/modules/metadata-enrichment`: bounded, source-independent HTML description metadata fetching for summary-poor articles.
 - `src/modules/technical-relevance`: batched AI semantic classification and persisted software-engineering eligibility.
 - `src/modules/topics`: future topic discovery, ranking, and selection.
 - `src/modules/posts`: future drafting and human-review workflows.
@@ -132,6 +133,32 @@ npm run ingest:rss
 ```
 
 One unavailable or malformed feed is logged and skipped without preventing the other configured feeds from being ingested. Missing authors, summaries, and publication dates are accepted; invalid dates are omitted.
+
+## Article metadata enrichment
+
+Ingestion discovers, normalizes, classifies, deduplicates, and stores source data. Metadata enrichment is a separate optional stage that fills a missing `SourceItem.summary` from lightweight HTML metadata before Technical Relevance is evaluated:
+
+```text
+Ingestion → Content Type Classification → Metadata Enrichment → Technical Relevance
+```
+
+Only `ARTICLE` records with an HTTP(S) URL, no useful summary, and `PENDING` enrichment status are processed by default. `VIDEO` and `UNKNOWN` records are skipped. Existing summaries are never overwritten. Description priority is standard `<meta name="description">`, Open Graph `og:description`, then Twitter description. StackPulse does not extract article bodies, run page JavaScript, use AI, summarize text, or transcribe videos during enrichment.
+
+Configure the bounded request behavior and run a limited sample:
+
+```env
+METADATA_ENRICHMENT_TIMEOUT_MS=5000
+METADATA_ENRICHMENT_MAX_BYTES=262144
+METADATA_ENRICHMENT_CONCURRENCY=3
+```
+
+```bash
+npm run metadata:enrich -- --limit=20
+```
+
+Terminal statuses are `ENRICHED`, `NO_METADATA`, and `FAILED`; they are not retried on normal runs. `--force` deliberately retries `NO_METADATA` and `FAILED`, but still skips `ENRICHED` records and any record that now has a useful summary. Developers can then deliberately re-evaluate affected relevance results with `npm run relevance:evaluate -- --force`; the two stages are not coupled.
+
+The fetcher accepts only HTML, checks the initial hostname and each redirect against obvious local/private hosts and resolved private IP addresses, limits redirects to five, times out the whole request, and streams at most the configured byte ceiling. This is focused SSRF risk reduction, not a network sandbox: DNS can change between validation and connection, and public servers can proxy private resources. Production deployment should also enforce outbound network policy.
 
 ## Quality checks
 

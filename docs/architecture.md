@@ -9,6 +9,7 @@ src/
   app/                  # Next.js routes and UI
   modules/
     ingestion/          # implemented source collection and normalization
+    metadata-enrichment/ # implemented lightweight HTML description enrichment
     technical-relevance/ # implemented semantic software relevance gate
     topics/             # reserved for future topic workflows
     posts/              # reserved for future content workflows
@@ -43,6 +44,25 @@ HN Search makes one `search_by_date` request per configured topic with `tags=sto
 The ingestion service applies source-independent deterministic deduplication before persistence. It prioritizes exact URLs, then canonical URLs that remove fragments, common tracking parameters, and safe non-root trailing slashes. Original URLs remain available as source links, while new records store a uniquely indexed canonical representation. Existing records without a canonical value are compared by canonicalizing their original URL at ingestion time. Title normalization is available as a reusable comparison primitive but is not used to discard records. Semantic deduplication is not implemented.
 
 Content type is detected deterministically immediately after normalization and before persistence. YouTube hostnames are classified as `VIDEO`; other valid HTTP(S) links are currently `ARTICLE`, and malformed or unsupported URLs are `UNKNOWN`. Video links remain persisted, but topic discovery and ranking must exclude them until explicit video-content extraction support exists. Future transcription or caption ingestion may change that eligibility rule; no such extraction is currently implemented.
+
+## Metadata enrichment
+
+Metadata enrichment is source-independent and remains separate from ingestion and Technical Relevance:
+
+```text
+Ingestion → Normalization → Deduplication → Content Type Classification
+    → Metadata Enrichment → Technical Relevance → future Topic Discovery
+```
+
+The manual enrichment service selects `ARTICLE` records with no non-whitespace summary. Normal runs select only the `PENDING` state. It performs no AI request and never replaces a summary supplied by Hacker News, RSS, or another source. A transaction rechecks the current summary before persisting, so concurrently added source context is preserved.
+
+The native Node.js fetch API retrieves only HTML metadata using a StackPulse User-Agent, a configurable whole-request timeout, a five-redirect ceiling, and a configurable streaming byte limit. Every redirect is handled manually and revalidated. Unsupported content types return `NO_METADATA`; HTTP, DNS, timeout, unsafe-URL, redirect, and size-limit errors return `FAILED`. HTML is parsed with `node-html-parser`, not regular expressions. Description priority is `meta[name=description]`, `meta[property=og:description]`, then `meta[name=twitter:description]`; entities and repeated whitespace are normalized, empty values are rejected, and persisted descriptions are capped at 1,000 characters.
+
+The fetcher rejects non-HTTP(S) URLs, credentials in URLs, localhost-style names, common local suffixes, private/reserved literal IP ranges, and hostnames whose DNS answers contain a private address. This is focused SSRF mitigation rather than an enterprise network boundary. DNS rebinding or a DNS change between validation and the native fetch connection remains possible, and a public endpoint may itself proxy private resources. Production should add outbound firewall or proxy policy if enrichment processes untrusted sources at scale.
+
+`SourceItem.metadataEnrichmentStatus` distinguishes `PENDING`, `ENRICHED`, `NO_METADATA`, and `FAILED`; `metadataEnrichmentAttemptedAt` records terminal attempts. Default runs do not retry attempted records. `--force` retries `NO_METADATA` and `FAILED` deliberately, never selects `ENRICHED`, and still cannot overwrite a useful summary. Work is distributed across a small configurable worker pool without a queue framework. Enrichment and relevance stay independently invokable so a developer can enrich first and then deliberately use the relevance command's existing `--force` option.
+
+This stage does not perform full article extraction, Readability processing, headless browsing, JavaScript execution, summarization, video transcription, Topic Discovery, or ranking.
 
 ## Technical relevance
 

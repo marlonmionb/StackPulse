@@ -11,6 +11,7 @@
     "test": "tsx --test \"src/**/*.test.ts\"",
     "ai:smoke": "tsx scripts/ai-smoke.ts",
     "relevance:evaluate": "tsx scripts/evaluate-technical-relevance.ts",
+    "metadata:enrich": "tsx scripts/enrich-source-metadata.ts",
     "ingest:hacker-news": "tsx scripts/ingest-hacker-news.ts",
     "ingest:hn-search": "tsx scripts/ingest-hn-search.ts",
     "ingest:rss": "tsx scripts/ingest-rss.ts",
@@ -23,6 +24,7 @@
     "dotenv": "^17.4.2",
     "fast-xml-parser": "^5.10.1",
     "next": "^16.3.0",
+    "node-html-parser": "^9.0.1",
     "openai": "^7.4.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"

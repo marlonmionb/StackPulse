@@ -21,6 +21,9 @@ Deduplication
 Content Type Classification
     |
     v
+Metadata Enrichment
+    |
+    v
 Technical Relevance Gate
     ↓
 Topic Discovery / Ranking
@@ -43,6 +46,8 @@ Historical Feedback
 ```
 
 Analytics may eventually enrich future topic ranking. The product must also support a cold start with no historical performance data.
+
+Ingestion discovers and stores normalized source data. Metadata enrichment is a separate deterministic stage that may add lightweight page description metadata to summary-poor articles. It does not scrape article bodies, execute page JavaScript, use AI, summarize, or support video transcription. Technical Relevance remains the independent semantic software/computing classifier.
 
 ## AI stages
 
