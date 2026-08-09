@@ -100,8 +100,9 @@ Profile interests live centrally in Topic Discovery configuration and default to
 Topic Discovery / Ranking
         -> derived current selectability
         -> explicit human Topic ID
-        -> one bounded Responses API request with Web Search
-        -> strict output + URL/citation grounding validation
+        -> bounded Responses API Web Search evidence collection
+        -> canonical URL consolidation + internal source IDs
+        -> no-search strict Structured synthesis
         -> transactional TopicResearch + TopicResearchSource + RESEARCHED lifecycle
         -> future Angle Generation
 ```
@@ -110,7 +111,11 @@ Current selectability reuses `isEligibleForTopicDiscovery` over a Topic's presen
 
 The explicit research command changes `DISCOVERED` to `SELECTED` before its provider operation. Only a validated and transactionally persisted report changes the Topic to `RESEARCHED`; failed attempts may remain selected. Exact Topic Discovery upserts do not write `status`, so they cannot reset `SELECTED` or `RESEARCHED`. Re-research requires `--force` and appends a new report rather than overwriting history.
 
-The installed OpenAI SDK exposes Web Search, strict Structured Outputs, medium reasoning, returned action sources/URL citations, reasoning-token usage, and `max_tool_calls`. The SDK-specific beta Responses surface currently carries that native maximum-call field, and this detail stays isolated in the shared AI provider. One-stage research is therefore sufficient: at most four Web Search calls and the structured synthesis happen in one response, and persisted URLs must match bounded seed URLs or returned Web Search metadata. The report retains at most ten sources and bounded seed summaries; it stores structured sections as pragmatic JSON rather than sentence-level tables.
+The installed OpenAI SDK exposes Web Search, strict Structured Outputs, medium reasoning, returned action sources/URL citations, reasoning-token usage, and `max_tool_calls`. The SDK-specific beta Responses surface currently carries that native maximum-call field, and this detail stays isolated in the shared AI provider. The adapter requests `include: ["web_search_call.action.sources"]` and reads every URL from each search action's `sources` array. It also reads provider-created `url_citation` annotations, which SDK 7.4.0 defines as citations to web resources used for the response, and uses their titles as metadata where available. It does not extract ordinary or Markdown URLs from model text, and open/find action targets do not substitute for the complete search source list.
+
+Research uses two stages so source identity is deterministic: evidence collection performs at most four Web Search calls and returns narrative context without source records; application code then validates HTTP(S) seed plus provider URLs, canonicalizes and deduplicates them, merges the best metadata, and assigns short internal IDs; no-search Structured synthesis receives only that evidence set and the bounded narrative. Persisted URLs must match bounded Topic seeds or provider-returned Web Search metadata. Same-host, repository-prefix, and child-path relationships grant no trust. The report retains at most ten sources and bounded seed summaries; it stores structured sections as pragmatic JSON rather than sentence-level tables.
+
+URL grounding answers whether a cited source belongs to that deterministic evidence set. Semantic citation grounding asks whether the source supports the claim being made. The synthesis prompt requires direct entity-specific attribution, complete evidence for compound claims, precise vendor-claim wording, and confidence based on support directness. Runtime checks still enforce source identity and citation structure; StackPulse does not claim to formally prove semantic entailment in application code.
 
 `TopicResearch` is append-only history for a Topic. `TopicResearchSource` stores the exact evidence ID, original returned URL, canonical URL, publisher/domain/date, and a small `PRIMARY`/`SECONDARY` taxonomy. Future editorial stages can reference a specific research ID. Product pages may be primary evidence of vendor claims during research but remain excluded from Topic Discovery and are not independent proof of performance or adoption.
 

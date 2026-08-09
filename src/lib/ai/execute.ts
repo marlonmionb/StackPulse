@@ -154,5 +154,5 @@ export async function executeAiRequest(
     createdAt: usage.requestedAt,
   });
 
-  return { outputText: response.outputText, groundedUrls: response.groundedUrls, usage };
+  return { outputText: response.outputText, webSearchSources: response.webSearchSources, usage };
 }

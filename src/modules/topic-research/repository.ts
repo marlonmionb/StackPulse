@@ -8,6 +8,13 @@ export type TopicResearchRepository = {
   persist(topicId: string, report: ValidatedResearchReport, usage: AiExecutionUsage, researchedAt: Date): Promise<string>;
 };
 
+export function topicResearchSourceRows(report: ValidatedResearchReport) {
+  return report.sources.map((source) => ({
+    evidenceId: source.id, title: source.title, url: source.url, canonicalUrl: source.canonicalUrl,
+    publisher: source.publisher, domain: source.domain, publishedAt: source.publishedAt, type: source.type,
+  }));
+}
+
 export const topicResearchRepository: TopicResearchRepository = {
   async findTopic(topicId) {
     const row = await prisma.topic.findUnique({ where: { id: topicId }, include: {
@@ -36,10 +43,7 @@ export const topicResearchRepository: TopicResearchRepository = {
         outputTokens: usage.outputTokens, reasoningTokens: usage.reasoningTokens,
         estimatedTokenCostUsd: usage.estimatedTokenCostUsd, estimatedToolCostUsd: usage.estimatedToolCostUsd,
         estimatedTotalCostUsd: usage.estimatedCostUsd, researchedAt,
-        sources: { create: report.sources.map((source) => ({
-          evidenceId: source.id, title: source.title, url: source.url, canonicalUrl: source.canonicalUrl,
-          publisher: source.publisher, domain: source.domain, publishedAt: source.publishedAt, type: source.type,
-        })) },
+        sources: { create: topicResearchSourceRows(report) },
       } });
       await tx.topic.update({ where: { id: topicId }, data: { status: "RESEARCHED" } });
       return research.id;

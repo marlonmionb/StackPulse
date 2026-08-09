@@ -44,7 +44,7 @@ function discovered(sourceItemIds = ["one", "two"]): DiscoveredTopic {
 
 function aiResult(topic: DiscoveredTopic): AiExecutionResult {
   return {
-    outputText: JSON.stringify({ topics: [topic] }), groundedUrls: [],
+    outputText: JSON.stringify({ topics: [topic] }), webSearchSources: [],
     usage: {
       feature: "topic-discovery", model: "gpt-5.4-nano", inputTokens: 200,
       outputTokens: 100, reasoningTokens: 0, webSearchCalls: 0, totalTokens: 300, requestedAt: new Date(), durationMs: 10,

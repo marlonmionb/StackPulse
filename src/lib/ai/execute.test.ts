@@ -43,7 +43,7 @@ describe("executeAiRequest", () => {
           reasoningTokens: 0,
           webSearchCalls: 0,
           totalTokens: 12,
-          groundedUrls: [],
+          webSearchSources: [],
         };
       },
     };

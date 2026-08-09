@@ -25,7 +25,7 @@ function candidate(id: string, title: string): TechnicalRelevanceCandidate {
 
 function aiResult(classifications: unknown[]): AiExecutionResult {
   return {
-    outputText: JSON.stringify({ classifications }), groundedUrls: [],
+    outputText: JSON.stringify({ classifications }), webSearchSources: [],
     usage: {
       feature: "technical-relevance",
       model: "gpt-5.4-nano",

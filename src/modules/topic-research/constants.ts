@@ -1,4 +1,6 @@
 export const TOPIC_RESEARCH_FEATURE = "topic-research";
+export const TOPIC_RESEARCH_EVIDENCE_FEATURE = "topic-research-evidence";
+export const TOPIC_RESEARCH_SYNTHESIS_FEATURE = "topic-research-synthesis";
 export const DEFAULT_TOPIC_RESEARCH_MODEL = "gpt-5.6-terra";
 export const DEFAULT_TOPIC_RESEARCH_MAX_OUTPUT_TOKENS = 4_000;
 export const DEFAULT_TOPIC_RESEARCH_MAX_WEB_SEARCH_CALLS = 4;

@@ -24,6 +24,13 @@ export type ResearchSource = {
   id: string; title: string; url: string; canonicalUrl: string; publisher: string | null;
   domain: string; publishedAt: Date | null; type: "PRIMARY" | "SECONDARY";
 };
+export type RawResearchEvidence = {
+  title: string; url: string; publisher: string | null; publishedAt: Date | null;
+  type: "PRIMARY" | "SECONDARY"; evidence: string | null; origin: "TOPIC_SEED" | "WEB_SEARCH";
+};
+export type ConsolidatedResearchEvidence = ResearchSource & {
+  evidence: string | null; origin: "TOPIC_SEED" | "WEB_SEARCH" | "TOPIC_SEED_AND_WEB_SEARCH";
+};
 export type ValidatedResearchReport = {
   summary: string; whyItMatters: string; keyFindings: KeyFinding[];
   technicalDetails: EvidenceReference[]; tradeoffs: EvidenceReference[];

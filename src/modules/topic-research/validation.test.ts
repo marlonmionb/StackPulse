@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import type { ConsolidatedResearchEvidence } from "./types";
 import { parseAndValidateTopicResearchOutput } from "./validation";
 
+const evidence: ConsolidatedResearchEvidence[] = [{
+  id: "s1", title: "Specification", url: "https://example.com/spec", canonicalUrl: "https://example.com/spec",
+  publisher: "Example", domain: "example.com", publishedAt: null, type: "PRIMARY", evidence: "Defines the behavior.", origin: "WEB_SEARCH",
+}];
 function valid() {
   return {
     summary: "A grounded summary.", whyItMatters: "It affects implementation choices.",
@@ -10,25 +15,30 @@ function valid() {
     tradeoffs: [{ point: "The guarantee adds coordination cost.", sourceIds: ["s1"] }],
     practicalImplications: [{ implication: "Implementations should validate state.", sourceIds: ["s1"] }],
     openQuestions: ["How do older clients behave?"], limitations: ["Only one primary source was available."],
-    sources: [{ id: "s1", title: "Specification", url: "https://example.com/spec", publisher: "Example", publishedAt: null, type: "PRIMARY" }],
   };
 }
-const parse = (value: unknown, grounded = ["https://example.com/spec"]) => parseAndValidateTopicResearchOutput(JSON.stringify(value), grounded);
+const parse = (value: unknown, sources = evidence) => parseAndValidateTopicResearchOutput(JSON.stringify(value), sources);
 
-describe("Topic Research output validation", () => {
-  it("accepts grounded evidence and normalizes its URL", () => assert.equal(parse(valid()).sources[0].canonicalUrl, "https://example.com/spec"));
-  it("rejects invalid confidence, missing evidence, dangling citations, malformed URLs, and hallucinated URLs", () => {
+describe("Topic Research synthesis validation", () => {
+  it("accepts only application-assigned evidence IDs and supplies the consolidated sources", () => {
+    const report = parse(valid());
+    assert.deepEqual(report.keyFindings[0].sourceIds, ["s1"]);
+    assert.equal(report.sources[0].canonicalUrl, "https://example.com/spec");
+  });
+  it("rejects invalid confidence, missing evidence, dangling IDs, and raw URL IDs", () => {
     const confidence = valid(); confidence.keyFindings[0].confidence = "CERTAIN"; assert.throws(() => parse(confidence), /Invalid confidence/);
     const missing = valid(); missing.keyFindings[0].sourceIds = []; assert.throws(() => parse(missing), /requires evidence/);
     const dangling = valid(); dangling.keyFindings[0].sourceIds = ["missing"]; assert.throws(() => parse(dangling), /dangling/);
-    const malformed = valid(); malformed.sources[0].url = "not-a-url"; assert.throws(() => parse(malformed), /Invalid source URL/);
-    assert.throws(() => parse(valid(), ["https://different.example/source"]), /not grounded/);
+    const rawUrl = valid(); rawUrl.keyFindings[0].sourceIds = ["https://github.com/jajego/interlock"];
+    assert.throws(() => parse(rawUrl), /dangling/);
   });
-  it("rejects duplicate source IDs and safely collapses duplicate canonical URLs with remapped citations", () => {
-    const duplicateId = valid(); duplicateId.sources.push({ ...duplicateId.sources[0] }); assert.throws(() => parse(duplicateId), /Duplicate source id/);
-    const duplicateUrl = valid(); duplicateUrl.sources.push({ ...duplicateUrl.sources[0], id: "s2", url: "https://example.com/spec/?utm_source=test" });
-    duplicateUrl.keyFindings[0].sourceIds = ["s2"];
-    const report = parse(duplicateUrl);
-    assert.equal(report.sources.length, 1); assert.deepEqual(report.keyFindings[0].sourceIds, ["s1"]);
+  it("rejects duplicate internal IDs and duplicate canonical evidence before synthesis validation", () => {
+    assert.throws(() => parse(valid(), [...evidence, { ...evidence[0] }]), /Duplicate internal source id/);
+    assert.throws(() => parse(valid(), [...evidence, { ...evidence[0], id: "s2" }]), /Duplicate canonical evidence URL/);
+  });
+  it("normalizes duplicate citation IDs consistently", () => {
+    const output = valid();
+    output.keyFindings[0].sourceIds = ["s1", "s1"];
+    assert.deepEqual(parse(output).keyFindings[0].sourceIds, ["s1"]);
   });
 });

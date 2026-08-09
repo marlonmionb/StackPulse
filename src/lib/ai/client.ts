@@ -7,8 +7,10 @@ export type AiProviderResponse = {
   reasoningTokens: number;
   webSearchCalls: number;
   totalTokens: number;
-  groundedUrls: string[];
+  webSearchSources: AiWebSearchSource[];
 };
+
+export type AiWebSearchSource = { url: string; title: string | null };
 
 export type AiStructuredOutput = {
   name: string;
@@ -28,6 +30,58 @@ export type AiProvider = {
 };
 
 let client: OpenAI | undefined;
+
+function record(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+/**
+ * Extracts only provider-owned Web Search metadata. Ordinary URLs in output
+ * text are deliberately ignored. URL citations are API annotations for web
+ * resources used by the response, so they may supplement the complete search
+ * action source list and provide titles.
+ */
+export function extractWebSearchResponse(output: readonly unknown[]): {
+  outputText: string; webSearchCalls: number; webSearchSources: AiWebSearchSource[];
+} {
+  const sources = new Map<string, AiWebSearchSource>();
+  const addSource = (url: unknown, title: unknown = null) => {
+    if (typeof url !== "string") return;
+    const normalizedTitle = typeof title === "string" && title.trim() ? title.trim() : null;
+    const current = sources.get(url);
+    sources.set(url, { url, title: current?.title ?? normalizedTitle });
+  };
+  let webSearchCalls = 0;
+  let outputText = "";
+  for (const rawItem of output) {
+    const item = record(rawItem);
+    if (!item) continue;
+    if (item.type === "web_search_call") {
+      webSearchCalls += 1;
+      const action = record(item.action);
+      if (action?.type === "search" && Array.isArray(action.sources)) {
+        for (const rawSource of action.sources) {
+          const source = record(rawSource);
+          if (source?.type === "url") addSource(source.url);
+        }
+      }
+    }
+    if (item.type !== "message" || !Array.isArray(item.content)) continue;
+    for (const rawContent of item.content) {
+      const content = record(rawContent);
+      if (content?.type !== "output_text" || typeof content.text !== "string") continue;
+      outputText += content.text;
+      if (!Array.isArray(content.annotations)) continue;
+      for (const rawAnnotation of content.annotations) {
+        const annotation = record(rawAnnotation);
+        if (annotation?.type === "url_citation") addSource(annotation.url, annotation.title);
+      }
+    }
+  }
+  return { outputText, webSearchCalls, webSearchSources: [...sources.values()] };
+}
 
 function getOpenAiClient(apiKey: string): OpenAI {
   client ??= new OpenAI({ apiKey });
@@ -71,38 +125,16 @@ export function createOpenAiProvider(apiKey: string): AiProvider {
         throw new Error("OpenAI response did not include token usage.");
       }
 
-      const groundedUrls = new Set<string>();
-      let webSearchCalls = 0;
-      let outputText = "";
-      for (const item of response.output) {
-        if (item.type === "web_search_call") {
-          webSearchCalls += 1;
-          if (item.action.type === "search") {
-            item.action.sources?.forEach((source) => groundedUrls.add(source.url));
-          } else if (item.action.url) {
-            groundedUrls.add(item.action.url);
-          }
-        }
-        if (item.type === "message") {
-          for (const content of item.content) {
-            if (content.type === "output_text") {
-              outputText += content.text;
-              for (const annotation of content.annotations) {
-                if (annotation.type === "url_citation") groundedUrls.add(annotation.url);
-              }
-            }
-          }
-        }
-      }
+      const extracted = extractWebSearchResponse(response.output);
 
       return {
-        outputText,
+        outputText: extracted.outputText,
         inputTokens: response.usage.input_tokens,
         outputTokens: response.usage.output_tokens,
         reasoningTokens: response.usage.output_tokens_details.reasoning_tokens,
-        webSearchCalls,
+        webSearchCalls: extracted.webSearchCalls,
         totalTokens: response.usage.total_tokens,
-        groundedUrls: [...groundedUrls],
+        webSearchSources: extracted.webSearchSources,
       };
     },
   };

@@ -1,3 +1,5 @@
+import type { AiWebSearchSource } from "./client";
+
 export type AiExecutionStatus = "SUCCESS" | "FAILURE";
 
 export type AiExecutionUsage = {
@@ -18,6 +20,6 @@ export type AiExecutionUsage = {
 
 export type AiExecutionResult = {
   outputText: string;
-  groundedUrls: string[];
+  webSearchSources: AiWebSearchSource[];
   usage: AiExecutionUsage;
 };

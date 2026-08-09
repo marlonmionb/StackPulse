@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { prisma } from "../src/lib/db/prisma";
 import { researchTopic } from "../src/modules/topic-research/service";
+import { formatKeyFinding } from "../src/modules/topic-research/cli-format";
 
 function parseArguments(args: string[]): { topicId: string; force: boolean } {
   let topicId = ""; let force = false;
@@ -34,7 +35,7 @@ async function main() {
   console.log(`Web Search cost: $${(usage.estimatedToolCostUsd ?? 0).toFixed(8)}`);
   console.log(`Estimated total: $${(usage.estimatedCostUsd ?? 0).toFixed(8)}\n`);
   console.log(`Summary:\n${report.summary}\n\nKey findings:`);
-  report.keyFindings.forEach((finding) => console.log(`- [${finding.confidence}] ${finding.text} (${finding.sourceIds.join(", ")})`));
+  report.keyFindings.forEach((finding) => console.log(formatKeyFinding(finding)));
   console.log("\nSources:"); report.sources.forEach((source, index) => console.log(`${index + 1}. [${source.type}] ${source.title} — ${source.url}`));
 }
 
