@@ -36,8 +36,10 @@ Checkboxes describe repository state, not planned dates or estimates.
 - [x] OpenAI client
 - [x] AI usage and cost tracking
 - [x] Technical relevance classification gate
+- [x] Content Kind classification and persisted editorial/source nature
 - [x] Topic discovery and semantic grouping
 - [x] Profile-aware topic ranking
+- [x] ContentKind-aware Topic Discovery source-quality policy
 - [x] Persisted Topic-to-SourceItem evidence relationships
 - [ ] Topic research
 - [ ] Angle suggestions

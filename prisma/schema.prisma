@@ -23,12 +23,18 @@ model SourceItem {
   technicalCategory             TechnicalCategory?
   technicalRelevanceReason      String?
   technicalRelevanceEvaluatedAt DateTime?
+  contentKind                   ContentKind?
+  contentKindConfidence         ContentKindConfidence?
+  contentKindReason             String?
+  contentKindEvaluatedAt        DateTime?
   createdAt                     DateTime                 @default(now())
   updatedAt                     DateTime                 @updatedAt
   topics                        TopicSourceItem[]
 
   @@index([technicalRelevanceEvaluatedAt, contentType])
   @@index([technicalRelevant, publishedAt])
+  @@index([contentKindEvaluatedAt, contentType])
+  @@index([contentKind, publishedAt])
   @@index([metadataEnrichmentStatus, contentType])
 }
 
@@ -112,6 +118,23 @@ enum ContentType {
   ARTICLE
   VIDEO
   UNKNOWN
+}
+
+enum ContentKind {
+  TECHNICAL_ARTICLE
+  TECHNICAL_NEWS
+  OFFICIAL_TECHNICAL
+  RESEARCH
+  REPOSITORY
+  PRODUCT_PAGE
+  DISCUSSION
+  OTHER
+}
+
+enum ContentKindConfidence {
+  HIGH
+  MEDIUM
+  LOW
 }
 
 enum MetadataEnrichmentStatus {

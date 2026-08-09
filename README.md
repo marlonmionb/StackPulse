@@ -1,6 +1,6 @@
 # StackPulse
 
-StackPulse is a personal content-intelligence platform for discovering, understanding, and turning technical topics into reviewed content. The current version includes multi-source ingestion, lightweight article metadata enrichment, an AI Technical Relevance Gate, and bounded Topic Discovery, semantic grouping, and profile-aware ranking. Topic Research, publishing, authentication, and analytics are not implemented yet.
+StackPulse is a personal content-intelligence platform for discovering, understanding, and turning technical topics into reviewed content. The current version includes multi-source ingestion, lightweight article metadata enrichment, an AI Technical Relevance Gate, semantic Content Kind classification, and bounded source-quality-aware Topic Discovery and ranking. Topic Research, publishing, authentication, and analytics are not implemented yet.
 
 ## Current stack
 
@@ -51,6 +51,7 @@ Then open `http://localhost:3000`.
 - `src/modules/ingestion`: collection, normalization, and persistence of external content; official Hacker News, targeted Hacker News Search, and RSS/Atom sources are implemented.
 - `src/modules/metadata-enrichment`: bounded, source-independent HTML description metadata fetching for summary-poor articles.
 - `src/modules/technical-relevance`: batched AI semantic classification and persisted software-engineering eligibility.
+- `src/modules/content-kind`: batched AI editorial/source-nature classification with freshness-aware caching.
 - `src/modules/topics`: bounded topic candidate selection, semantic grouping, ranking, validation, and persistence.
 - `src/modules/posts`: future drafting and human-review workflows.
 - `src/modules/analytics`: reserved boundary; intentionally empty of domain logic.
@@ -228,12 +229,25 @@ The stages remain deliberately separate:
 
 ```text
 Technical Relevance -> broad software/computing eligibility
+Content Kind        -> editorial/source nature of the page
 Topic Discovery     -> semantic grouping of eligible SourceItems
 Topic Ranking       -> prioritization as technical content opportunities
 Topic Research      -> future deeper factual research before writing
 ```
 
-Topic Discovery reuses the existing eligibility query: candidates must be non-video, evaluated by the Technical Relevance Gate, marked technically eligible, and published within the configured lookback. It never queries unevaluated SourceItems, fetches pages, or sends article bodies. One execution sends at most the configured item count and returns at most the configured topic count.
+Run Content Kind after Technical Relevance:
+
+```bash
+npm run content-kind:evaluate
+npm run content-kind:evaluate -- --limit=20
+npm run content-kind:evaluate -- --force --limit=20
+```
+
+The classifier uses `gpt-5.4-nano`, batches of 25, a 2,000-token output maximum, and the shared AI usage/budget boundary. It persists nullable Content Kind, confidence, short reason, and evaluation time. Normal runs skip current results; successful metadata enrichment after evaluation makes a result eligible again, and `--force` deliberately re-evaluates selected records.
+
+The controlled taxonomy is `TECHNICAL_ARTICLE`, `TECHNICAL_NEWS`, `OFFICIAL_TECHNICAL`, `RESEARCH`, `REPOSITORY`, `PRODUCT_PAGE`, `DISCUSSION`, and `OTHER`. Content Type remains the physical/basic URL format, Technical Relevance asks whether material concerns software/computing, and Content Kind asks what editorial/source kind the page is.
+
+Topic Discovery candidates must be non-video, technically eligible, Content Kind evaluated, and published within the configured lookback. Technical articles/news, official technical sources, and research are strong seeds. Repositories and discussions remain eligible as supporting-strength signals. Product pages and `OTHER` remain persisted for potential future Topic Research context but are excluded from discovery input and cannot independently create Topics. One execution sends at most the configured item count and returns at most the configured topic count.
 
 ```env
 TOPIC_DISCOVERY_LOOKBACK_DAYS=7
@@ -247,6 +261,8 @@ npm run topics:discover
 npm run topics:discover -- --limit=10
 ```
 
-The stage uses `gpt-5.4-nano`, strict Structured Outputs, and a 3,000-token maximum output. It ranks profile relevance, technical depth, freshness, practical/content value, discussion potential, source strength, and novelty/significance. Topics persist with component scores and an explicit many-to-many relationship to supporting SourceItems. A deterministic signature of sorted supporting SourceItem IDs makes an exact repeat update the same Topic; it does not perform semantic historical deduplication when a later run groups a different support set.
+The stage uses `gpt-5.4-nano`, strict Structured Outputs, and a 3,000-token maximum output. It ranks profile relevance, technical depth, freshness, practical/content value, discussion potential, source quality/independence, and novelty/significance. Its prompt requires a single product/tool/repository source to remain a narrow factual topic and forbids unsupported ecosystem-trend generalization. Topics persist with component scores and an explicit many-to-many relationship to supporting SourceItems. A deterministic signature of sorted supporting SourceItem IDs makes an exact repeat update the same Topic; it does not perform semantic historical deduplication when a later run groups a different support set.
+
+Existing Topics are not deleted or retroactively rewritten. For a safe corrected-behavior benchmark, apply migrations, run Content Kind over a bounded recent sample, then run bounded Topic Discovery and compare its printed ranked titles with the earlier run. Exact support signatures update their existing Topic; different support sets may create new historical Topics. Inspect or archive old local benchmark rows manually rather than adding destructive production behavior.
 
 All calls pass through the shared budget, pricing, output-token, and `AiUsage` boundary. This stage does not generate hooks, angles, posts, or Topic Research.

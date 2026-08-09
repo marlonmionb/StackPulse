@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import { prisma } from "@/lib/db/prisma";
 import { buildTopicDiscoveryCandidateWhere } from "./candidate-selection";
 import type { DiscoveredTopic, PersistedDiscoveredTopic, TopicDiscoveryCandidate } from "./types";
+import { topicDiscoverySourceStrength } from "./source-quality";
+import { isEligibleForTopicDiscovery } from "./candidate-selection";
 
 export type FindTopicCandidatesOptions = { publishedAfter: Date; limit: number };
 
@@ -16,14 +18,25 @@ export function createDiscoverySignature(sourceItemIds: readonly string[]): stri
 
 export const topicDiscoveryRepository: TopicDiscoveryRepository = {
   async findCandidates({ publishedAfter, limit }) {
-    return prisma.sourceItem.findMany({
+    const rows = await prisma.sourceItem.findMany({
       where: buildTopicDiscoveryCandidateWhere({ publishedAfter }),
       orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
-      take: limit,
       select: {
         id: true, title: true, url: true, source: true, summary: true,
-        publishedAt: true, technicalCategory: true, technicalRelevanceScore: true,
+        publishedAt: true, technicalCategory: true, technicalRelevanceScore: true, contentKind: true,
+        contentType: true, technicalRelevant: true, technicalRelevanceEvaluatedAt: true,
+        contentKindEvaluatedAt: true, metadataEnrichmentStatus: true, metadataEnrichmentAttemptedAt: true,
       },
+    });
+    return rows.filter(isEligibleForTopicDiscovery).slice(0, limit).map((row) => {
+      if (row.contentKind === null) throw new Error(`Topic candidate ${row.id} is missing ContentKind.`);
+      const sourceStrength = topicDiscoverySourceStrength(row.contentKind);
+      if (sourceStrength === null) throw new Error(`Topic candidate ${row.id} has ineligible ContentKind ${row.contentKind}.`);
+      return {
+        id: row.id, title: row.title, url: row.url, source: row.source, summary: row.summary,
+        publishedAt: row.publishedAt, technicalCategory: row.technicalCategory,
+        technicalRelevanceScore: row.technicalRelevanceScore, contentKind: row.contentKind, sourceStrength,
+      };
     });
   },
 

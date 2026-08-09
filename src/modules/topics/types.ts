@@ -1,4 +1,6 @@
 import type { TechnicalCategory } from "@/modules/technical-relevance/constants";
+import type { ContentKind } from "@/modules/content-kind/constants";
+import type { TopicDiscoverySourceStrength } from "./source-quality";
 
 export type TopicDiscoveryCandidate = {
   id: string;
@@ -9,6 +11,8 @@ export type TopicDiscoveryCandidate = {
   publishedAt: Date | null;
   technicalCategory: TechnicalCategory | null;
   technicalRelevanceScore: number | null;
+  contentKind: ContentKind;
+  sourceStrength: TopicDiscoverySourceStrength;
 };
 
 export type DiscoveredTopic = {

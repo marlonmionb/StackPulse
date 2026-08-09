@@ -11,6 +11,7 @@ src/
     ingestion/          # implemented source collection and normalization
     metadata-enrichment/ # implemented lightweight HTML description enrichment
     technical-relevance/ # implemented semantic software relevance gate
+    content-kind/        # implemented editorial/source-nature classification
     topics/             # implemented discovery, grouping, ranking, and persistence
     posts/              # reserved for future content workflows
     analytics/          # reserved for future performance analysis
@@ -51,7 +52,7 @@ Metadata enrichment is source-independent and remains separate from ingestion an
 
 ```text
 Ingestion → Normalization → Deduplication → Content Type Classification
-    → Metadata Enrichment → Technical Relevance → Topic Discovery / Ranking
+    → Metadata Enrichment → Technical Relevance → Content Kind → Topic Discovery / Ranking
 ```
 
 The manual enrichment service selects `ARTICLE` records with no non-whitespace summary. Normal runs select only the `PENDING` state. It performs no AI request and never replaces a summary supplied by Hacker News, RSS, or another source. A transaction rechecks the current summary before persisting, so concurrently added source context is preserved.
@@ -72,13 +73,21 @@ The manual evaluator selects non-video `SourceItem` records whose `technicalRele
 
 The model returns a semantic boolean and a 0-10 score. Application eligibility requires all of: the model assessment is relevant, the score is at least 6, and the category is not `NON_SOFTWARE`. The final boolean is persisted as `technicalRelevant` together with the score, category, reason, and evaluation timestamp. The timestamp distinguishes unevaluated content from evaluated-and-rejected content and prevents repeat charges unless a developer explicitly uses `--force`.
 
-`buildTopicDiscoveryCandidateWhere` provides the reusable query boundary: candidates must be non-video, evaluated, and `technicalRelevant = true`, with a publication-date cutoff supplied by Topic Discovery. It does not duplicate Technical Relevance threshold logic.
+Technical Relevance persists the final eligibility boolean so later stages do not duplicate its score/category threshold logic. Topic Discovery composes that result with its own Content Kind policy at one reusable candidate-selection boundary.
+
+## Content Kind
+
+Content Type remains the deterministic physical/basic URL format (`ARTICLE`, `VIDEO`, or `UNKNOWN`). Content Kind is a separate semantic classification of editorial/source purpose: `TECHNICAL_ARTICLE`, `TECHNICAL_NEWS`, `OFFICIAL_TECHNICAL`, `RESEARCH`, `REPOSITORY`, `PRODUCT_PAGE`, `DISCUSSION`, or `OTHER`. It does not replace Technical Relevance; a product landing page can be technically relevant while its Content Kind is `PRODUCT_PAGE`.
+
+The manual classifier selects non-video records that have passed Technical Relevance. It sends only id, title, URL/hostname, source, existing summary, and optional technical category to `gpt-5.4-nano` in batches of 25 with a 2,000-token output limit. Strict Structured Outputs require one bounded classification per supplied id, controlled kind/confidence enums, and a short reason. Runtime validation rejects malformed JSON, missing/unknown/duplicate ids, invalid enums, and empty or oversized reasons before transactional persistence.
+
+Nullable fields distinguish legacy/unevaluated records from evaluated `OTHER` records. Normal runs skip a current classification; `--force` deliberately overwrites it. A result is stale and eligible again when successful metadata enrichment occurred after Content Kind evaluation, because the new summary may materially change the evidence. Failed or metadata-empty enrichment does not invalidate it.
 
 ## Topic Discovery and ranking
 
-Topic Discovery combines multiple eligible SourceItems into content opportunities. It selects only through the Technical Relevance candidate boundary, applies a configurable recent lookback and item ceiling, and sends one concise metadata payload to `gpt-5.4-nano` where practical. The payload contains ids, titles, optional summaries, technical category and relevance score, source, publication date, and hostname. It contains no article body, HTML, Prisma metadata, or relevance-reason text, and the stage performs no external fetch.
+Topic Discovery combines eligible SourceItems into content opportunities. Its centralized candidate boundary composes the existing non-video and Technical Relevance requirements with Content Kind policy, then applies the configured lookback and item ceiling. Strong seeds are technical articles/news, official technical material, and research. Repositories and discussions remain eligible but are identified as supporting-strength sources. `PRODUCT_PAGE` and `OTHER` remain persisted but are excluded from discovery input, so they cannot independently create a Topic. The concise metadata payload adds Content Kind and source-strength semantics but contains no article body, HTML, Prisma metadata, or relevance-reason text, and performs no external fetch.
 
-The dedicated prompt distinguishes the broad relevance gate from discovery and ranking. Strict Structured Outputs provide a bounded topic array with title, description, overall score, profile relevance, technical depth, freshness, content potential, ranking reason, and supporting SourceItem ids. Runtime validation independently enforces score bounds, known support ids, non-empty support, duplicate-reference removal, and the maximum topic count. Duplicate topic entries with an identical support set are collapsed to the highest-scoring result before persistence.
+The dedicated prompt distinguishes the broad relevance gate from discovery and ranking. It forbids generalizing one product/tool launch, repository, or isolated announcement into an ecosystem trend without multiple supplied independent sources; single-source topics must remain narrow and factual. Ranking explicitly values substantive engineering material, research, official technical documentation, and independent corroboration above weak launch evidence. Strict Structured Outputs provide a bounded topic array, and runtime validation preserves the existing score, support-id, and topic-count guarantees.
 
 Profile interests live centrally in Topic Discovery configuration and default to the current React, TypeScript, Java/Spring, frontend/backend/full-stack, API, database/PostgreSQL, distributed systems/Kafka, AWS/cloud, architecture/system-design, and AI-engineering interests. They are replaceable by future user settings without distributing profile checks through application logic.
 

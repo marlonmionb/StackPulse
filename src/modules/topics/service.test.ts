@@ -23,6 +23,8 @@ function candidate(id: string): TopicDiscoveryCandidate {
     publishedAt: new Date("2026-08-07T00:00:00Z"),
     technicalCategory: "SOFTWARE_ENGINEERING",
     technicalRelevanceScore: 9,
+    contentKind: "TECHNICAL_ARTICLE",
+    sourceStrength: "STRONG",
   };
 }
 
