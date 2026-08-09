@@ -30,7 +30,7 @@ Content Kind Classification
     ↓
 Topic Discovery / Ranking
     ↓
-Topic Research
+Topic Research + Author Profile Context
     ↓
 Angle Suggestions
     ↓
@@ -50,6 +50,14 @@ Historical Feedback
 Analytics may eventually enrich future topic ranking. The product must also support a cold start with no historical performance data.
 
 Ingestion discovers and stores normalized source data. Metadata enrichment is a separate deterministic stage that may add lightweight page description metadata to summary-poor articles. It does not scrape article bodies, execute page JavaScript, use AI, summarize, or support video transcription. Technical Relevance remains the independent semantic software/computing classifier. Content Kind separately identifies whether a technically relevant page is an article, technical news, official technical material, research, a repository, product marketing, discussion, or other source material.
+
+## Author context and editorial personalization
+
+`docs/author-profile.md` is a manually maintained, version-controlled source of professional/technical author context. It records verified professional experience, separately labeled personal-project experience, current learning/exploration, positioning, content goals, and explicit claim boundaries. It intentionally excludes contact information and unrelated personal details.
+
+TopicResearch provides factual technical evidence. AuthorProfile provides verified context about what the author can credibly say about personal experience. Future Angle Generation will combine one explicit TopicResearch report and its evidence with the Author Profile, then distinguish strong professional, personal-project, learning/exploration, and no-personal-connection cases. No personal connection is valid and must produce a useful technical angle without a fabricated story. Future Draft Generation will occur only after a human selects an angle.
+
+The Author Profile is editorial context only. It does not influence Technical Relevance, Content Kind, Topic Discovery, Topic Ranking, or Topic Research factual synthesis. It is not persisted in the database and is loaded without an AI call. Angle Generation, human angle selection, and Draft Generation are not implemented.
 
 ## AI stages
 

@@ -14,6 +14,7 @@ src/
     content-kind/        # implemented editorial/source-nature classification
     topics/             # implemented discovery, grouping, ranking, and persistence
     topic-research/     # explicit grounded research and versioned evidence
+    author-profile/     # verified author context for future editorial stages
     posts/              # reserved for future content workflows
     analytics/          # reserved for future performance analysis
   lib/
@@ -122,6 +123,26 @@ Evidence origin, source provenance, and citation support remain separate. Origin
 `TopicResearch` is append-only history for a Topic. `TopicResearchSource` stores the exact evidence ID, original returned URL, canonical URL, publisher/domain/date, and a small `PRIMARY`/`SECONDARY` taxonomy. Future editorial stages can reference a specific research ID. Product pages may be primary evidence of vendor claims during research but remain excluded from Topic Discovery and are not independent proof of performance or adoption.
 
 Exact and canonical URL comparison also collapses a story returned by several HN Search topics and prevents duplicates between HN Search, official Hacker News, and RSS. Query provenance is intentionally not stored: `SourceItem` has no natural metadata field, and adding schema solely for search terms would add complexity without affecting ingestion behavior.
+
+## Author Profile Context and future editorial boundary
+
+The manually maintained, version-controlled `docs/author-profile.md` file is the source of truth for verified professional experience, personal-project experience, learning/exploration areas, positioning, content goals, and authorship constraints. The `author-profile` module reads it as UTF-8 prompt-ready Markdown, trims file-boundary whitespace, enforces a 12,000-character maximum, and deterministically requires its six conceptual sections. It does not parse technologies into entities, use AI, or persist anything in Prisma.
+
+Topic Research and Author Profile answer different questions:
+
+```text
+TopicResearch  -> What grounded evidence supports the technical subject?
+AuthorProfile  -> What can this author credibly claim about personal experience?
+
+TopicResearch + AuthorProfile
+            -> future Angle Generation
+            -> human angle selection
+            -> future Draft Generation
+```
+
+Future Angle Generation must distinguish a strong verified professional connection, a personal-project connection, a learning/exploration connection, and no personal connection. With no connection, a useful technical explanation or trade-off analysis is valid and preferable to an invented anecdote. Project experience must remain framed as project experience, and learning must never imply production expertise. Future Draft Generation must run only after human angle selection.
+
+This is an editorial/personalization boundary. Author Profile context must not affect Technical Relevance, Content Kind, Topic Discovery, Topic Ranking, or Topic Research factual synthesis. Technical claims remain grounded in the selected TopicResearch report and its evidence. Angle Generation, angle selection, and Draft Generation remain unimplemented.
 
 ## Persistence
 

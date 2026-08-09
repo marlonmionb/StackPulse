@@ -42,6 +42,7 @@ Checkboxes describe repository state, not planned dates or estimates.
 - [x] ContentKind-aware Topic Discovery source-quality policy
 - [x] Persisted Topic-to-SourceItem evidence relationships
 - [x] Human-selected grounded Topic research with versioned evidence
+- [x] Version-controlled Author Profile Context with deterministic validation
 - [ ] Angle suggestions
 - [ ] Post draft generation
 - [ ] Technical review
@@ -52,6 +53,8 @@ Checkboxes describe repository state, not planned dates or estimates.
 - [ ] Edit draft
 - [ ] Approve or reject workflow
 - [ ] Enforced post status lifecycle
+
+Angle suggestions will combine one explicit grounded TopicResearch report with the Author Profile. They must preserve professional, personal-project, and learning distinctions, allow no personal connection as a valid result, and precede explicit human angle selection. Draft generation remains a later stage after that selection.
 
 ## Publishing
 

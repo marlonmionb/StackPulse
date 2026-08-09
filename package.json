@@ -15,6 +15,7 @@
     "topics:discover": "tsx scripts/discover-topics.ts",
     "topics:list": "tsx scripts/list-topics.ts",
     "topics:research": "tsx scripts/research-topic.ts",
+    "author-profile:validate": "tsx scripts/validate-author-profile.ts",
     "metadata:enrich": "tsx scripts/enrich-source-metadata.ts",
     "content-type:backfill": "tsx scripts/backfill-content-types.ts",
     "ingest:hacker-news": "tsx scripts/ingest-hacker-news.ts",

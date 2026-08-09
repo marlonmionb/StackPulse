@@ -1,6 +1,6 @@
 # StackPulse
 
-StackPulse is a personal content-intelligence platform for discovering, understanding, and turning technical topics into reviewed content. The current version includes multi-source ingestion, lightweight article metadata enrichment, an AI Technical Relevance Gate, semantic Content Kind classification, bounded source-quality-aware Topic Discovery and ranking, and explicit human-selected grounded Topic Research. Angle generation, drafting, publishing, authentication, and analytics are not implemented yet.
+StackPulse is a personal content-intelligence platform for discovering, understanding, and turning technical topics into reviewed content. The current version includes multi-source ingestion, lightweight article metadata enrichment, an AI Technical Relevance Gate, semantic Content Kind classification, bounded source-quality-aware Topic Discovery and ranking, explicit human-selected grounded Topic Research, and a version-controlled Author Profile Context for future editorial personalization. Angle generation, drafting, publishing, authentication, and analytics are not implemented yet.
 
 ## Current stack
 
@@ -54,6 +54,7 @@ Then open `http://localhost:3000`.
 - `src/modules/content-kind`: batched AI editorial/source-nature classification with freshness-aware caching.
 - `src/modules/topics`: bounded topic candidate selection, semantic grouping, ranking, current-selectability validation, and persistence.
 - `src/modules/topic-research`: explicit single-Topic grounded Web Research, evidence validation, and versioned report persistence.
+- `src/modules/author-profile`: deterministic loading and validation of verified author context and claim boundaries for future editorial stages.
 - `src/modules/posts`: future drafting and human-review workflows.
 - `src/modules/analytics`: reserved boundary; intentionally empty of domain logic.
 - `src/lib/db`: shared database infrastructure, including the development-safe Prisma Client singleton.
@@ -70,6 +71,28 @@ The domain modules are boundaries for future features, not framework layers. Rep
 - [`docs/project-context.md`](docs/project-context.md): product problem, expected flow, and AI stages.
 - [`docs/architecture.md`](docs/architecture.md): current and intended technical boundaries.
 - [`docs/roadmap.md`](docs/roadmap.md): implementation status by phase.
+- [`docs/author-profile.md`](docs/author-profile.md): manually maintained, version-controlled professional context and authorship boundaries.
+
+## Author Profile Context
+
+`docs/author-profile.md` is the prompt-ready source of truth for verified professional experience, personal-project experience, current learning, positioning, content goals, and claims the author may or may not make. It contains professional/technical context only and is not a resume or a store for contact details.
+
+Validate it locally with a deterministic, read-only command:
+
+```bash
+npm run author-profile:validate
+```
+
+The profile is not stored in Prisma and the command makes no AI calls. Its future boundary is:
+
+```text
+TopicResearch factual evidence + AuthorProfile verified author context
+                              -> Angle Generation
+                              -> human angle selection
+                              -> Draft Generation
+```
+
+Author Profile context is editorial personalization only. It does not affect Technical Relevance, Content Kind, Topic Discovery, Topic Ranking, or Topic Research factual synthesis. Angle and Draft Generation are not implemented.
 
 ## Hacker News ingestion
 
