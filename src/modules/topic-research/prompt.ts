@@ -42,7 +42,7 @@ export function buildTopicResearchSynthesisPrompt(topic: TopicForResearch, evide
   const synthesisEvidence = evidence.map((source) => ({
     id: source.id, title: source.title, url: source.canonicalUrl, publisher: source.publisher,
     domain: source.domain, publishedAt: source.publishedAt?.toISOString() ?? null,
-    type: source.type, origin: source.origin, evidence: source.evidence,
+    origin: source.origin, evidence: source.evidence,
   }));
 
   return `Synthesize the final GROUNDED TOPIC RESEARCH brief for the one explicitly human-selected Topic below.
@@ -52,6 +52,14 @@ ${STAGE_BOUNDARIES}
 Web Search is complete. Do not search again. Use only the supplied, already canonicalized and deduplicated evidence set of at most ${TOPIC_RESEARCH_MAX_SOURCES} sources. Each source has an application-assigned internal ID such as s1 or s2. Cite only those exact IDs in each item's sourceIds field; do not embed citation markers in prose, never use a URL as a source ID, and do not return a source list or any new URLs.
 
 Product pages are valid only as primary evidence of what a vendor says or offers. Phrase marketing metrics and performance claims explicitly as vendor claims unless independent evidence corroborates them. Do not treat a product page as independent proof of performance, adoption, market trends, quality, or technical correctness.
+
+Source provenance classification rules:
+- Return exactly one sourceAssessment for every supplied source ID. Classify provenance independently from how StackPulse discovered the source: WEB_SEARCH does not imply SECONDARY, and TOPIC_SEED does not imply PRIMARY.
+- PRIMARY means original or first-party evidence relative to this Topic: official specifications or standards, official technical or SDK documentation, official release notes, a project's own repository/README/announcement, original research papers, and original project/vendor benchmarks or publications.
+- SECONDARY means independent reporting, explanation, interpretation, tutorials, reviews, ecosystem commentary, or analysis of someone else's work.
+- Official PostgreSQL documentation, official MCP TypeScript SDK documentation, or an official project repository found through Web Search is PRIMARY. An independent engineering article attached as a Topic seed is SECONDARY. An original academic paper is PRIMARY; an article explaining that paper is SECONDARY.
+- A vendor product page is PRIMARY evidence for what that vendor says or offers, but PRIMARY is not a quality or truth score. Continue to attribute vendor claims and require independent evidence for broader performance or adoption claims. An independent benchmark evaluating a project is SECONDARY relative to that project, while the project's own benchmark is PRIMARY evidence of its reported result.
+- This is one coarse source-level provenance assessment relative to the Topic. Claim-level citation rules below still determine whether a source supports a particular statement.
 
 Evidence attribution rules:
 - Every factual claim must be supported by every source ID needed for its material factual parts.

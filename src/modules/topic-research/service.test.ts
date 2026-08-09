@@ -17,7 +17,8 @@ function topic(overrides: Partial<TopicForResearch> = {}): TopicForResearch {
 const evidenceOutput = { researchNarrative: "Repository details. A model-only link https://github.com/jajego/interlock/blob/main/benchmark.md is not evidence." };
 const synthesisOutput = { summary: "Summary", whyItMatters: "Important", keyFindings: [{ finding: "Finding", sourceIds: ["s1"], confidence: "HIGH" }],
   technicalDetails: [{ detail: "Detail", sourceIds: ["s1"] }], tradeoffs: [{ point: "Tradeoff", sourceIds: ["s1"] }],
-  practicalImplications: [{ implication: "Implication", sourceIds: ["s1"] }], openQuestions: [], limitations: [] };
+  practicalImplications: [{ implication: "Implication", sourceIds: ["s1"] }], openQuestions: [], limitations: [],
+  sourceAssessments: [{ sourceId: "s1", type: "PRIMARY" }] };
 
 function aiResult(output: unknown, options: { webSearchCalls: number; feature: string; webSearchSources?: AiExecutionResult["webSearchSources"] }): AiExecutionResult {
   const toolCost = options.webSearchCalls * 0.01;

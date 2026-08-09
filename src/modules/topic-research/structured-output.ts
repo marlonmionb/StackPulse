@@ -11,7 +11,7 @@ export function topicResearchOutputFormat(sourceIds: readonly string[]) { return
   description: "A concise engineering research brief whose factual statements cite returned evidence sources.",
   schema: {
     type: "object", additionalProperties: false,
-    required: ["summary", "whyItMatters", "keyFindings", "technicalDetails", "tradeoffs", "practicalImplications", "openQuestions", "limitations"],
+    required: ["summary", "whyItMatters", "keyFindings", "technicalDetails", "tradeoffs", "practicalImplications", "openQuestions", "limitations", "sourceAssessments"],
     properties: {
       summary: { type: "string", minLength: 1, maxLength: 2_000 },
       whyItMatters: { type: "string", minLength: 1, maxLength: 1_500 },
@@ -25,6 +25,13 @@ export function topicResearchOutputFormat(sourceIds: readonly string[]) { return
       practicalImplications: { type: "array", maxItems: 8, items: evidenceReference("implication", sourceIds) },
       openQuestions: { type: "array", maxItems: 8, items: { type: "string", minLength: 1, maxLength: 500 } },
       limitations: { type: "array", maxItems: 8, items: { type: "string", minLength: 1, maxLength: 500 } },
+      sourceAssessments: { type: "array", minItems: sourceIds.length, maxItems: sourceIds.length, items: {
+        type: "object", additionalProperties: false, required: ["sourceId", "type"],
+        properties: {
+          sourceId: { type: "string", enum: [...sourceIds] },
+          type: { type: "string", enum: ["PRIMARY", "SECONDARY"] },
+        },
+      } },
     },
   },
 }; }

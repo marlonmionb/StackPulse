@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { prisma } from "../src/lib/db/prisma";
 import { researchTopic } from "../src/modules/topic-research/service";
-import { formatKeyFinding } from "../src/modules/topic-research/cli-format";
+import { countPrimarySources, formatKeyFinding } from "../src/modules/topic-research/cli-format";
 
 function parseArguments(args: string[]): { topicId: string; force: boolean } {
   let topicId = ""; let force = false;
@@ -27,7 +27,7 @@ async function main() {
   console.log("Research completed.\n");
   console.log(`Research ID: ${result.researchId}`);
   console.log(`Sources: ${report.sources.length}`);
-  console.log(`Primary sources: ${report.sources.filter((source) => source.type === "PRIMARY").length}`);
+  console.log(`Primary sources: ${countPrimarySources(report.sources)}`);
   console.log(`Web searches: ${usage.webSearchCalls}\n`);
   console.log(`Input tokens: ${usage.inputTokens}`); console.log(`Output tokens: ${usage.outputTokens}`);
   console.log(`Reasoning tokens: ${usage.reasoningTokens}`);

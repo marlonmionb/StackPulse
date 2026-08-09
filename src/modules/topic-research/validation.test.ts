@@ -5,7 +5,7 @@ import { parseAndValidateTopicResearchOutput } from "./validation";
 
 const evidence: ConsolidatedResearchEvidence[] = [{
   id: "s1", title: "Specification", url: "https://example.com/spec", canonicalUrl: "https://example.com/spec",
-  publisher: "Example", domain: "example.com", publishedAt: null, type: "PRIMARY", evidence: "Defines the behavior.", origin: "WEB_SEARCH",
+  publisher: "Example", domain: "example.com", publishedAt: null, evidence: "Defines the behavior.", origin: "WEB_SEARCH",
 }];
 function valid() {
   return {
@@ -15,9 +15,20 @@ function valid() {
     tradeoffs: [{ point: "The guarantee adds coordination cost.", sourceIds: ["s1"] }],
     practicalImplications: [{ implication: "Implementations should validate state.", sourceIds: ["s1"] }],
     openQuestions: ["How do older clients behave?"], limitations: ["Only one primary source was available."],
+    sourceAssessments: [{ sourceId: "s1", type: "PRIMARY" }],
   };
 }
 const parse = (value: unknown, sources = evidence) => parseAndValidateTopicResearchOutput(JSON.stringify(value), sources);
+const twoSources: ConsolidatedResearchEvidence[] = [
+  { ...evidence[0], title: "Official SDK documentation", origin: "WEB_SEARCH" },
+  { ...evidence[0], id: "s2", title: "Independent analysis", url: "https://analysis.example/article", canonicalUrl: "https://analysis.example/article", domain: "analysis.example", origin: "TOPIC_SEED" },
+];
+const originCases: ConsolidatedResearchEvidence[] = [
+  { ...evidence[0], title: "Official documentation", origin: "WEB_SEARCH" },
+  { ...evidence[0], id: "s2", title: "Official repository", url: "https://github.com/example/project", canonicalUrl: "https://github.com/example/project", domain: "github.com", origin: "WEB_SEARCH" },
+  { ...evidence[0], id: "s3", title: "Independent analysis", url: "https://analysis.example/article", canonicalUrl: "https://analysis.example/article", domain: "analysis.example", origin: "TOPIC_SEED" },
+  { ...evidence[0], id: "s4", title: "Official seed documentation", url: "https://docs.example/guide", canonicalUrl: "https://docs.example/guide", domain: "docs.example", origin: "TOPIC_SEED" },
+];
 
 describe("Topic Research synthesis validation", () => {
   it("accepts only application-assigned evidence IDs and supplies the consolidated sources", () => {
@@ -40,5 +51,34 @@ describe("Topic Research synthesis validation", () => {
     const output = valid();
     output.keyFindings[0].sourceIds = ["s1", "s1"];
     assert.deepEqual(parse(output).keyFindings[0].sourceIds, ["s1"]);
+  });
+  it("applies assessed provenance independently from evidence origin", () => {
+    const output = valid();
+    output.sourceAssessments = [
+      { sourceId: "s1", type: "PRIMARY" },
+      { sourceId: "s2", type: "PRIMARY" },
+      { sourceId: "s3", type: "SECONDARY" },
+      { sourceId: "s4", type: "PRIMARY" },
+    ];
+    const report = parse(output, originCases);
+    assert.deepEqual(report.sources.map(({ id, type }) => ({ id, type })), [
+      { id: "s1", type: "PRIMARY" },
+      { id: "s2", type: "PRIMARY" },
+      { id: "s3", type: "SECONDARY" },
+      { id: "s4", type: "PRIMARY" },
+    ]);
+  });
+  it("requires exactly one valid assessment for every application source ID", () => {
+    const missing = valid();
+    assert.throws(() => parse(missing, twoSources), /Missing source assessment for s2/);
+
+    const duplicate = valid(); duplicate.sourceAssessments.push({ sourceId: "s1", type: "SECONDARY" });
+    assert.throws(() => parse(duplicate), /Duplicate source assessment for s1/);
+
+    const unknown = valid(); unknown.sourceAssessments = [{ sourceId: "unknown", type: "PRIMARY" }];
+    assert.throws(() => parse(unknown), /unknown source id unknown/);
+
+    const invalid = valid(); invalid.sourceAssessments[0].type = "TRUSTED";
+    assert.throws(() => parse(invalid), /Invalid source type/);
   });
 });

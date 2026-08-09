@@ -14,10 +14,6 @@ function parseHttpUrl(value: string): { canonicalUrl: string; domain: string } {
   return { canonicalUrl: canonicalizeUrl(value), domain: parsed.hostname.toLowerCase() };
 }
 
-function seedType(contentKind: TopicForResearch["sourceItems"][number]["contentKind"]): "PRIMARY" | "SECONDARY" {
-  return contentKind === "OFFICIAL_TECHNICAL" || contentKind === "RESEARCH" || contentKind === "REPOSITORY" ? "PRIMARY" : "SECONDARY";
-}
-
 export function collectSeedEvidence(topic: TopicForResearch): RawResearchEvidence[] {
   return topic.sourceItems.slice(0, TOPIC_RESEARCH_MAX_SEED_SOURCES).flatMap((item) => {
     const url = item.canonicalUrl ?? item.url;
@@ -25,7 +21,7 @@ export function collectSeedEvidence(topic: TopicForResearch): RawResearchEvidenc
       const { domain } = parseHttpUrl(url);
       return [{
         title: item.title, url, publisher: domain, publishedAt: item.publishedAt,
-        type: seedType(item.contentKind), evidence: item.summary?.slice(0, TOPIC_RESEARCH_MAX_SUMMARY_LENGTH) ?? null,
+        evidence: item.summary?.slice(0, TOPIC_RESEARCH_MAX_SUMMARY_LENGTH) ?? null,
         origin: "TOPIC_SEED" as const,
       }];
     } catch { return []; }
@@ -55,7 +51,7 @@ export function collectWebSearchEvidence(sources: readonly AiWebSearchSource[]):
       const title = source.title?.trim().slice(0, 300) || domain;
       return [{
         title, url: source.url, publisher: domain, publishedAt: null,
-        type: "SECONDARY" as const, evidence: null, origin: "WEB_SEARCH" as const,
+        evidence: null, origin: "WEB_SEARCH" as const,
       }];
     } catch { return []; }
   });
@@ -85,7 +81,6 @@ export function consolidateResearchEvidence(
       title: betterText(current.title, candidate.title)!,
       publisher: betterText(current.publisher, candidate.publisher),
       publishedAt: current.publishedAt ?? candidate.publishedAt,
-      type: current.type === "PRIMARY" || candidate.type === "PRIMARY" ? "PRIMARY" : "SECONDARY",
       evidence: betterText(current.evidence, candidate.evidence),
       origin: current.origin === candidate.origin ? current.origin : "TOPIC_SEED_AND_WEB_SEARCH",
     });

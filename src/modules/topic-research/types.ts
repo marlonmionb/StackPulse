@@ -26,11 +26,12 @@ export type ResearchSource = {
 };
 export type RawResearchEvidence = {
   title: string; url: string; publisher: string | null; publishedAt: Date | null;
-  type: "PRIMARY" | "SECONDARY"; evidence: string | null; origin: "TOPIC_SEED" | "WEB_SEARCH";
+  evidence: string | null; origin: "TOPIC_SEED" | "WEB_SEARCH";
 };
-export type ConsolidatedResearchEvidence = ResearchSource & {
+export type ConsolidatedResearchEvidence = Omit<ResearchSource, "type"> & {
   evidence: string | null; origin: "TOPIC_SEED" | "WEB_SEARCH" | "TOPIC_SEED_AND_WEB_SEARCH";
 };
+export type SourceAssessment = { sourceId: string; type: "PRIMARY" | "SECONDARY" };
 export type ValidatedResearchReport = {
   summary: string; whyItMatters: string; keyFindings: KeyFinding[];
   technicalDetails: EvidenceReference[]; tradeoffs: EvidenceReference[];

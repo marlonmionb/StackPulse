@@ -9,7 +9,7 @@ import type { RawResearchEvidence } from "./types";
 
 function raw(url: string, overrides: Partial<RawResearchEvidence> = {}): RawResearchEvidence {
   return {
-    title: "Interlock", url, publisher: null, publishedAt: null, type: "SECONDARY",
+    title: "Interlock", url, publisher: null, publishedAt: null,
     evidence: "Repository evidence.", origin: "WEB_SEARCH", ...overrides,
   };
 }
@@ -27,12 +27,12 @@ describe("Topic Research evidence consolidation", () => {
 
   it("collapses a seed URL duplicated by provider metadata and merges metadata", () => {
     const result = consolidateResearchEvidence(
-      [raw("https://github.com/jajego/interlock", { title: "Interlock", type: "PRIMARY", origin: "TOPIC_SEED" })],
+      [raw("https://github.com/jajego/interlock", { title: "Interlock", origin: "TOPIC_SEED" })],
       collectWebSearchEvidence([{ url: "https://github.com/jajego/interlock/", title: "Interlock distributed locking repository" }]),
     );
     assert.equal(result.length, 1); assert.equal(result[0].id, "s1");
     assert.equal(result[0].title, "Interlock distributed locking repository");
-    assert.equal(result[0].publisher, "github.com"); assert.equal(result[0].type, "PRIMARY");
+    assert.equal(result[0].publisher, "github.com");
     assert.equal(result[0].origin, "TOPIC_SEED_AND_WEB_SEARCH");
   });
 
@@ -69,7 +69,7 @@ describe("Topic Research evidence consolidation", () => {
       evidence: [{ url: child }],
     }));
     const evidence = consolidateResearchEvidence(
-      [raw(repository, { origin: "TOPIC_SEED", type: "PRIMARY" })],
+      [raw(repository, { origin: "TOPIC_SEED" })],
       collectWebSearchEvidence([]),
     );
     assert.match(narrative, /benchmark\.md/);
@@ -80,7 +80,7 @@ describe("Topic Research evidence consolidation", () => {
     const repository = "https://github.com/mcp-use/mcp-use";
     const child = `${repository}/blob/main/benchmark.md`;
     const evidence = consolidateResearchEvidence(
-      [raw(repository, { origin: "TOPIC_SEED", type: "PRIMARY" })],
+      [raw(repository, { origin: "TOPIC_SEED" })],
       collectWebSearchEvidence([{ url: child, title: "mcp-use benchmark" }]),
     );
     assert.deepEqual(evidence.map(({ id, canonicalUrl }) => ({ id, canonicalUrl })), [

@@ -22,7 +22,7 @@ describe("Topic Research prompt", () => {
     assert.doesNotMatch(JSON.stringify(topicResearchEvidenceOutputFormat.schema), /"url"/);
     const synthesis = buildTopicResearchSynthesisPrompt(topic, [{
       id: "s1", title: "Technical announcement", url: "https://example.com/announcement", canonicalUrl: "https://example.com/announcement",
-      publisher: "Example", domain: "example.com", publishedAt: null, type: "PRIMARY", evidence: "Evidence", origin: "WEB_SEARCH",
+      publisher: "Example", domain: "example.com", publishedAt: null, evidence: "Evidence", origin: "WEB_SEARCH",
     }]);
     assert.match(synthesis, /Product pages are valid only as primary evidence of what a vendor says/);
     assert.match(synthesis, /Do not write a hook, hashtags, angle, LinkedIn post, or draft/);
@@ -42,7 +42,7 @@ describe("Topic Research prompt", () => {
     };
     const synthesis = buildTopicResearchSynthesisPrompt(topic, [{
       id: "s1", title: "Project documentation", url: "https://example.com/project", canonicalUrl: "https://example.com/project",
-      publisher: "Example", domain: "example.com", publishedAt: null, type: "PRIMARY", evidence: "Project behavior.", origin: "WEB_SEARCH",
+      publisher: "Example", domain: "example.com", publishedAt: null, evidence: "Project behavior.", origin: "WEB_SEARCH",
     }]);
 
     assert.match(synthesis, /directly supports that entity-specific fact/);
@@ -55,5 +55,29 @@ describe("Topic Research prompt", () => {
     assert.match(synthesis, /Foo requires Serializable isolation/);
     assert.match(synthesis, /sourceIds \["s1", "s2"\]/);
     assert.match(synthesis, /Interlock requires Read Committed/);
+  });
+
+  it("classifies source provenance independently from evidence origin", () => {
+    const topic: TopicForResearch = {
+      id: "topic", title: "MCP SDKs", description: null, rankingReason: null,
+      score: 8, profileRelevanceScore: 8, technicalDepthScore: 8, freshnessScore: 8, contentPotentialScore: 8,
+      status: "DISCOVERED", researchCount: 0, sourceItems: [],
+    };
+    const synthesis = buildTopicResearchSynthesisPrompt(topic, [{
+      id: "s1", title: "MCP TypeScript SDK", url: "https://example.com/sdk", canonicalUrl: "https://example.com/sdk",
+      publisher: "Example", domain: "example.com", publishedAt: null, evidence: null, origin: "WEB_SEARCH",
+    }]);
+    assert.match(synthesis, /WEB_SEARCH does not imply SECONDARY/);
+    assert.match(synthesis, /TOPIC_SEED does not imply PRIMARY/);
+    assert.match(synthesis, /official specifications or standards/);
+    assert.match(synthesis, /official project repository found through Web Search is PRIMARY/);
+    assert.match(synthesis, /independent engineering article attached as a Topic seed is SECONDARY/);
+    assert.match(synthesis, /vendor product page is PRIMARY evidence for what that vendor says/);
+    assert.match(synthesis, /independent reporting, explanation, interpretation/);
+
+    const schema = topicResearchOutputFormat(["s1", "s2"]).schema as { properties: { sourceAssessments: { minItems: number; maxItems: number; items: { properties: { sourceId: { enum: string[] } } } } } };
+    assert.equal(schema.properties.sourceAssessments.minItems, 2);
+    assert.equal(schema.properties.sourceAssessments.maxItems, 2);
+    assert.deepEqual(schema.properties.sourceAssessments.items.properties.sourceId.enum, ["s1", "s2"]);
   });
 });

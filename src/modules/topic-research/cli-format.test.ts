@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { formatKeyFinding } from "./cli-format";
+import { countPrimarySources, formatKeyFinding } from "./cli-format";
 
 describe("Topic Research CLI formatting", () => {
   it("prints a finding's citations exactly once", () => {
@@ -12,5 +12,12 @@ describe("Topic Research CLI formatting", () => {
     assert.equal(output, "- [MEDIUM] Interlock uses Read Committed while PostgreSQL defines its snapshot semantics. [s1, s3]");
     assert.doesNotMatch(output, /\[s1, s3\] \(s1, s3\)/);
     assert.equal(output.match(/s1, s3/g)?.length, 1);
+  });
+  it("counts primary sources from validated source provenance", () => {
+    const sources = [
+      ...Array.from({ length: 7 }, () => ({ type: "PRIMARY" as const })),
+      ...Array.from({ length: 3 }, () => ({ type: "SECONDARY" as const })),
+    ];
+    assert.equal(countPrimarySources(sources), 7);
   });
 });

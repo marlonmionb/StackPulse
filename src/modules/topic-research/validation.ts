@@ -1,4 +1,4 @@
-import type { ConsolidatedResearchEvidence, EvidenceReference, KeyFinding, ValidatedResearchReport } from "./types";
+import type { ConsolidatedResearchEvidence, EvidenceReference, KeyFinding, SourceAssessment, ValidatedResearchReport } from "./types";
 
 export class TopicResearchOutputError extends Error {
   constructor(message: string, options?: ErrorOptions) { super(message, options); this.name = "TopicResearchOutputError"; }
@@ -42,11 +42,28 @@ function references(value: unknown, label: string, textField: string, ids: Set<s
   });
 }
 
+function sourceAssessments(value: unknown, ids: Set<string>): Map<string, SourceAssessment["type"]> {
+  if (!Array.isArray(value)) throw new TopicResearchOutputError("sourceAssessments must be an array.");
+  const assessments = new Map<string, SourceAssessment["type"]>();
+  for (const [index, raw] of value.entries()) {
+    const row = object(raw, `sourceAssessments[${index}]`);
+    const sourceId = row.sourceId;
+    if (typeof sourceId !== "string" || !ids.has(sourceId)) throw new TopicResearchOutputError(`sourceAssessments[${index}] contains unknown source id ${String(sourceId)}.`);
+    if (assessments.has(sourceId)) throw new TopicResearchOutputError(`Duplicate source assessment for ${sourceId}.`);
+    if (row.type !== "PRIMARY" && row.type !== "SECONDARY") throw new TopicResearchOutputError(`Invalid source type in sourceAssessments[${index}].`);
+    assessments.set(sourceId, row.type);
+  }
+  const missing = [...ids].filter((id) => !assessments.has(id));
+  if (missing.length > 0) throw new TopicResearchOutputError(`Missing source assessment for ${missing.join(", ")}.`);
+  return assessments;
+}
+
 export function parseAndValidateTopicResearchOutput(outputText: string, evidence: readonly ConsolidatedResearchEvidence[]): ValidatedResearchReport {
   let parsed: unknown;
   try { parsed = JSON.parse(outputText); } catch (error) { throw new TopicResearchOutputError("OpenAI returned malformed research JSON.", { cause: error }); }
   const root = object(parsed, "research output");
   const ids = evidenceIds(evidence);
+  const assessments = sourceAssessments(root.sourceAssessments, ids);
   const findingRefs = references(root.keyFindings, "keyFindings", "finding", ids, 10);
   if (findingRefs.length === 0) throw new TopicResearchOutputError("At least one key finding is required.");
   const rawFindings = root.keyFindings as Record<string, unknown>[];
@@ -63,7 +80,7 @@ export function parseAndValidateTopicResearchOutput(outputText: string, evidence
     openQuestions: textArray(root.openQuestions, "openQuestions", 8), limitations: textArray(root.limitations, "limitations", 8),
     sources: evidence.map((source) => ({
       id: source.id, title: source.title, url: source.url, canonicalUrl: source.canonicalUrl,
-      publisher: source.publisher, domain: source.domain, publishedAt: source.publishedAt, type: source.type,
+      publisher: source.publisher, domain: source.domain, publishedAt: source.publishedAt, type: assessments.get(source.id)!,
     })),
   };
 }
