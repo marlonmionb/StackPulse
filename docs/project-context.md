@@ -65,7 +65,7 @@ AI should be split into independent, observable tasks rather than implemented as
 - technical review;
 - performance analysis.
 
-Different stages may use different models and token budgets. All use the shared observable OpenAI request boundary. Ingested content is not automatically AI eligible: non-software matches and videos remain stored while being excluded from Topic Discovery. Technically relevant product and miscellaneous pages also remain stored, but cannot independently seed Topic Discovery. Topic Discovery semantically groups source-quality-eligible items and ranks opportunities for the centralized developer profile. Topic Research remains a future, independent factual-research stage before writing.
+Different stages may use different models and token budgets. All use the shared observable OpenAI request boundary. Ingested content is not automatically AI eligible: non-software matches and videos remain stored while being excluded from Topic Discovery. Technically relevant product and miscellaneous pages also remain stored, but cannot independently seed Topic Discovery. Topic Discovery semantically groups source-quality-eligible items and ranks opportunities for the centralized developer profile. Topic Research is an implemented independent factual-research stage before writing. It runs only after a human explicitly selects one currently valid ranked Topic, performs bounded Web Search, validates evidence grounding, and persists append-only research history.
 
 The domain questions remain distinct:
 
@@ -74,4 +74,6 @@ The domain questions remain distinct:
 - Content Kind: what editorial/source kind of page is it?
 - Topic Discovery: what meaningful technical opportunities are supported by suitable sources?
 - Topic Ranking: which opportunities deserve priority?
-- Future Topic Research: independently verify and deepen a human-selected Topic.
+- Topic Research: independently verify and deepen one explicitly human-selected Topic using grounded evidence.
+
+Current selectability is derived from each Topic's present supporting SourceItems through the centralized Topic Discovery policy. Historical Topics are preserved, but Topics with only now-ineligible support are not offered for new research by default. Research may use a product page as attributed evidence of a vendor claim; it does not restore product pages as Topic Discovery signals or treat marketing as independent proof.

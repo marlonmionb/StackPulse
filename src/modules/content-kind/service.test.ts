@@ -10,7 +10,7 @@ function candidate(id: string): ContentKindCandidate {
 }
 
 function result(classifications: ContentKindClassification[]): AiExecutionResult {
-  return { outputText: JSON.stringify({ classifications }), usage: { feature: "content-kind", model: "gpt-5.4-nano", inputTokens: 100, outputTokens: 40, totalTokens: 140, requestedAt: new Date(), durationMs: 5, status: "SUCCESS", estimatedCostUsd: 0.00007 } };
+  return { outputText: JSON.stringify({ classifications }), groundedUrls: [], usage: { feature: "content-kind", model: "gpt-5.4-nano", inputTokens: 100, outputTokens: 40, reasoningTokens: 0, webSearchCalls: 0, totalTokens: 140, requestedAt: new Date(), durationMs: 5, status: "SUCCESS", estimatedTokenCostUsd: 0.00007, estimatedToolCostUsd: 0, estimatedCostUsd: 0.00007 } };
 }
 
 describe("evaluateContentKind", () => {

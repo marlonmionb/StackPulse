@@ -8,4 +8,9 @@ material, and research are strong discovery seeds; repositories and discussions
 remain eligible as supporting-strength signals. The prompt prevents unsupported
 single-product-to-industry-trend generalization.
 
-This module does not perform Topic Research, drafting, publishing, or analytics.
+The module also derives current Topic selectability by reusing the same candidate
+predicate across a Topic's present supporting SourceItems. Historical Topics are
+preserved and omitted from the default list when no current eligible support
+remains. Explicit research lives in the separate `topic-research` module; Topic
+Discovery never triggers it. This module does not perform drafting, publishing,
+or analytics.

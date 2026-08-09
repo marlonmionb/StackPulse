@@ -41,7 +41,7 @@ Checkboxes describe repository state, not planned dates or estimates.
 - [x] Profile-aware topic ranking
 - [x] ContentKind-aware Topic Discovery source-quality policy
 - [x] Persisted Topic-to-SourceItem evidence relationships
-- [ ] Topic research
+- [x] Human-selected grounded Topic research with versioned evidence
 - [ ] Angle suggestions
 - [ ] Post draft generation
 - [ ] Technical review

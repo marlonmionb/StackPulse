@@ -44,11 +44,11 @@ function discovered(sourceItemIds = ["one", "two"]): DiscoveredTopic {
 
 function aiResult(topic: DiscoveredTopic): AiExecutionResult {
   return {
-    outputText: JSON.stringify({ topics: [topic] }),
+    outputText: JSON.stringify({ topics: [topic] }), groundedUrls: [],
     usage: {
       feature: "topic-discovery", model: "gpt-5.4-nano", inputTokens: 200,
-      outputTokens: 100, totalTokens: 300, requestedAt: new Date(), durationMs: 10,
-      status: "SUCCESS", estimatedCostUsd: 0.000165,
+      outputTokens: 100, reasoningTokens: 0, webSearchCalls: 0, totalTokens: 300, requestedAt: new Date(), durationMs: 10,
+      status: "SUCCESS", estimatedTokenCostUsd: 0.000165, estimatedToolCostUsd: 0, estimatedCostUsd: 0.000165,
     },
   };
 }

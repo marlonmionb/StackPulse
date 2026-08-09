@@ -7,6 +7,10 @@ export type AiUsageRecord = {
   model: string;
   inputTokens: number;
   outputTokens: number;
+  reasoningTokens: number;
+  webSearchCalls: number;
+  estimatedTokenCostUsd: number | null;
+  estimatedToolCostUsd: number | null;
   estimatedCostUsd: number | null;
   durationMs: number;
   status: AiUsageStatus;
@@ -29,7 +33,6 @@ export const aiUsageRepository: AiUsageStore = {
       _sum: { estimatedCostUsd: true },
       where: {
         createdAt: { gte: start, lt: end },
-        status: "SUCCESS",
       },
     });
 

@@ -1,6 +1,6 @@
 # StackPulse
 
-StackPulse is a personal content-intelligence platform for discovering, understanding, and turning technical topics into reviewed content. The current version includes multi-source ingestion, lightweight article metadata enrichment, an AI Technical Relevance Gate, semantic Content Kind classification, and bounded source-quality-aware Topic Discovery and ranking. Topic Research, publishing, authentication, and analytics are not implemented yet.
+StackPulse is a personal content-intelligence platform for discovering, understanding, and turning technical topics into reviewed content. The current version includes multi-source ingestion, lightweight article metadata enrichment, an AI Technical Relevance Gate, semantic Content Kind classification, bounded source-quality-aware Topic Discovery and ranking, and explicit human-selected grounded Topic Research. Angle generation, drafting, publishing, authentication, and analytics are not implemented yet.
 
 ## Current stack
 
@@ -52,7 +52,8 @@ Then open `http://localhost:3000`.
 - `src/modules/metadata-enrichment`: bounded, source-independent HTML description metadata fetching for summary-poor articles.
 - `src/modules/technical-relevance`: batched AI semantic classification and persisted software-engineering eligibility.
 - `src/modules/content-kind`: batched AI editorial/source-nature classification with freshness-aware caching.
-- `src/modules/topics`: bounded topic candidate selection, semantic grouping, ranking, validation, and persistence.
+- `src/modules/topics`: bounded topic candidate selection, semantic grouping, ranking, current-selectability validation, and persistence.
+- `src/modules/topic-research`: explicit single-Topic grounded Web Research, evidence validation, and versioned report persistence.
 - `src/modules/posts`: future drafting and human-review workflows.
 - `src/modules/analytics`: reserved boundary; intentionally empty of domain logic.
 - `src/lib/db`: shared database infrastructure, including the development-safe Prisma Client singleton.
@@ -211,7 +212,7 @@ OPENAI_DEFAULT_MODEL=gpt-4o-mini
 AI_MONTHLY_BUDGET_USD=5
 ```
 
-All three values are required before an AI request. `OPENAI_API_KEY` is read only by server-side code. `AI_MONTHLY_BUDGET_USD` is an application-side safeguard: before a request, StackPulse sums successful estimated usage in the current UTC calendar month and refuses the call when spending has reached the budget. It does not replace provider-side billing limits, and a request that begins below the budget can exceed the remaining amount because its final token usage is not known in advance.
+All three values are required before an AI request. `OPENAI_API_KEY` is read only by server-side code. `AI_MONTHLY_BUDGET_USD` is an application-side safeguard: before a request, StackPulse sums estimated provider cost (tokens plus tools, including failed operations when usage is available) in the current UTC calendar month and refuses the call when spending has reached the budget. It does not replace provider-side billing limits, and a request that begins below the budget can exceed the remaining amount because its final usage is not known in advance.
 
 Supported prices live in one local pricing table and are expressed per million input/output tokens. Unknown models fail explicitly. Pricing is not fetched at runtime and must be reviewed manually whenever OpenAI changes its prices.
 
@@ -232,7 +233,7 @@ Technical Relevance -> broad software/computing eligibility
 Content Kind        -> editorial/source nature of the page
 Topic Discovery     -> semantic grouping of eligible SourceItems
 Topic Ranking       -> prioritization as technical content opportunities
-Topic Research      -> future deeper factual research before writing
+Topic Research      -> grounded research only after explicit human selection
 ```
 
 Run Content Kind after Technical Relevance:
@@ -265,4 +266,48 @@ The stage uses `gpt-5.4-nano`, strict Structured Outputs, and a 3,000-token maxi
 
 Existing Topics are not deleted or retroactively rewritten. For a safe corrected-behavior benchmark, apply migrations, run Content Kind over a bounded recent sample, then run bounded Topic Discovery and compare its printed ranked titles with the earlier run. Exact support signatures update their existing Topic; different support sets may create new historical Topics. Inspect or archive old local benchmark rows manually rather than adding destructive production behavior.
 
-All calls pass through the shared budget, pricing, output-token, and `AiUsage` boundary. This stage does not generate hooks, angles, posts, or Topic Research.
+All calls pass through the shared budget, pricing, output-token, and `AiUsage` boundary. Topic Discovery does not generate hooks, angles, posts, or automatically trigger Topic Research.
+
+## Human Topic Selection and Grounded Topic Research
+
+```text
+Topic Discovery & Ranking
+        -> current/selectable Topic validation
+        -> human explicitly chooses a Topic ID
+        -> bounded grounded Web Research
+        -> persisted versioned TopicResearch + TopicResearchSource evidence
+        -> future Angle Generation
+```
+
+List current selectable ranked Topics, or include preserved historical/non-selectable rows explicitly:
+
+```bash
+npm run topics:list
+npm run topics:list -- --limit=20
+npm run topics:list -- --include-historical
+```
+
+Selectability is derived from current supporting SourceItems using the centralized Topic Discovery candidate/source-quality policy; it is not a new editorial status. A Topic backed only by `PRODUCT_PAGE`, `OTHER`, or otherwise no-longer-eligible support remains in the database but is marked `STALE` and omitted from the default list. `ARCHIVED` is a separate lifecycle block.
+
+Research exactly one human-selected Topic:
+
+```env
+OPENAI_TOPIC_RESEARCH_MODEL=gpt-5.6-terra
+TOPIC_RESEARCH_MAX_OUTPUT_TOKENS=4000
+TOPIC_RESEARCH_MAX_WEB_SEARCH_CALLS=4
+```
+
+```bash
+npm run topics:research -- --topic-id=<TOPIC_ID>
+npm run topics:research -- --topic-id=<TOPIC_ID> --force
+```
+
+The Topic moves from `DISCOVERED` to `SELECTED` when the explicit operation starts and to `RESEARCHED` only after validated evidence and report persistence succeed. A failed attempt may remain `SELECTED`. Existing successful research causes a zero-request skip unless `--force` is supplied; force appends a new report and sources without changing old history.
+
+Topic Research uses one Responses API request with `gpt-5.6-terra`, medium reasoning, strict Structured Outputs, Web Search, and the API-native maximum tool-call bound. It retains no more than 10 sources and sends no more than 10 bounded seed SourceItems. Every factual report section cites persisted evidence IDs. Source URLs are accepted only when they canonicalize to an existing Topic seed URL or a URL surfaced in actual Web Search response metadata; duplicate canonical URLs collapse and dangling references fail validation.
+
+Official specifications, documentation, release notes, primary project sources, repositories/releases, RFCs, and original research are preferred. A product page may support only a clearly attributed vendor/product claim unless independent evidence corroborates it. Product pages remain excluded from Topic Discovery.
+
+Research costs include both model tokens and Web Search tool calls. Pricing is manually maintained in the centralized AI pricing module. The monthly preflight uses estimated total provider cost. A final request may slightly overshoot the remaining application budget because exact final token/tool usage is unknown before execution.
+
+No scheduled or automatic research exists, and no Angle Generation, draft/post generation, or publishing behavior is included.

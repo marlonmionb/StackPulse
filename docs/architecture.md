@@ -13,6 +13,7 @@ src/
     technical-relevance/ # implemented semantic software relevance gate
     content-kind/        # implemented editorial/source-nature classification
     topics/             # implemented discovery, grouping, ranking, and persistence
+    topic-research/     # explicit grounded research and versioned evidence
     posts/              # reserved for future content workflows
     analytics/          # reserved for future performance analysis
   lib/
@@ -91,7 +92,27 @@ The dedicated prompt distinguishes the broad relevance gate from discovery and r
 
 Profile interests live centrally in Topic Discovery configuration and default to the current React, TypeScript, Java/Spring, frontend/backend/full-stack, API, database/PostgreSQL, distributed systems/Kafka, AWS/cloud, architecture/system-design, and AI-engineering interests. They are replaceable by future user settings without distributing profile checks through application logic.
 
-`TopicSourceItem` models the many-to-many evidence relationship. Topic score components, ranking reason, discovery timestamp, and `DISCOVERED` lifecycle status are persisted. A SHA-256 signature of the sorted supporting SourceItem ids is unique; an exact rerun updates that Topic and its relationships while preserving its lifecycle status. This deliberately limited strategy does not detect semantically equivalent historical Topics when the supporting set changes. Topic Research, writing, publishing, and analytics remain separate future stages.
+`TopicSourceItem` models the many-to-many evidence relationship. Topic score components, ranking reason, discovery timestamp, and `DISCOVERED` lifecycle status are persisted. A SHA-256 signature of the sorted supporting SourceItem ids is unique; an exact rerun updates that Topic and its relationships while preserving its lifecycle status. This deliberately limited strategy does not detect semantically equivalent historical Topics when the supporting set changes. Writing, publishing, and analytics remain separate future stages. Topic Research is independently invoked for one explicit human-selected Topic and is never triggered by discovery.
+
+## Human Topic selection and grounded research
+
+```text
+Topic Discovery / Ranking
+        -> derived current selectability
+        -> explicit human Topic ID
+        -> one bounded Responses API request with Web Search
+        -> strict output + URL/citation grounding validation
+        -> transactional TopicResearch + TopicResearchSource + RESEARCHED lifecycle
+        -> future Angle Generation
+```
+
+Current selectability reuses `isEligibleForTopicDiscovery` over a Topic's present SourceItem relationships. It requires at least one currently eligible supporting item and an allowed lifecycle (`DISCOVERED`, `SELECTED`, or `RESEARCHED`). This derived state does not replace editorial lifecycle. Historical rows with only ineligible support remain persisted and appear only under explicit historical listing; archived lifecycle is reported separately.
+
+The explicit research command changes `DISCOVERED` to `SELECTED` before its provider operation. Only a validated and transactionally persisted report changes the Topic to `RESEARCHED`; failed attempts may remain selected. Exact Topic Discovery upserts do not write `status`, so they cannot reset `SELECTED` or `RESEARCHED`. Re-research requires `--force` and appends a new report rather than overwriting history.
+
+The installed OpenAI SDK exposes Web Search, strict Structured Outputs, medium reasoning, returned action sources/URL citations, reasoning-token usage, and `max_tool_calls`. The SDK-specific beta Responses surface currently carries that native maximum-call field, and this detail stays isolated in the shared AI provider. One-stage research is therefore sufficient: at most four Web Search calls and the structured synthesis happen in one response, and persisted URLs must match bounded seed URLs or returned Web Search metadata. The report retains at most ten sources and bounded seed summaries; it stores structured sections as pragmatic JSON rather than sentence-level tables.
+
+`TopicResearch` is append-only history for a Topic. `TopicResearchSource` stores the exact evidence ID, original returned URL, canonical URL, publisher/domain/date, and a small `PRIMARY`/`SECONDARY` taxonomy. Future editorial stages can reference a specific research ID. Product pages may be primary evidence of vendor claims during research but remain excluded from Topic Discovery and are not independent proof of performance or adoption.
 
 Exact and canonical URL comparison also collapses a story returned by several HN Search topics and prevents duplicates between HN Search, official Hacker News, and RSS. Query provenance is intentionally not stored: `SourceItem` has no natural metadata field, and adding schema solely for search terms would add complexity without affecting ingestion behavior.
 
@@ -123,6 +144,6 @@ It also contains `ARCHIVED`. This enum prepares the intended direction, but no p
 
 ## Cost observability
 
-Each attempted provider request creates a minimal `AiUsage` record containing its feature, model, input/output token counts, estimated USD cost, duration, success/failure status, and request timestamp. Total tokens remain available in the application result and are derived from the persisted input/output counts when needed. Failed provider requests use zero token counts and no cost estimate because actual usage is unavailable.
+Each attempted provider request creates a minimal `AiUsage` record containing its feature, model, input/output and reasoning token counts, Web Search call count, estimated token/tool/total USD cost, duration, success/failure status, and request timestamp. Failed provider requests use zero usage only when the provider exposes none; if an error exposes incurred usage, it remains recorded. Monthly budget accounting sums total estimated provider cost rather than token-only cost.
 
 Prompts, completions, provider payloads, conversations, and agent state are intentionally excluded. The additive model supports historical cost reporting and budget enforcement across the independent AI stages planned for StackPulse without coupling those stages to ingestion or content modules.

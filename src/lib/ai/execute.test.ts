@@ -40,7 +40,10 @@ describe("executeAiRequest", () => {
           outputText: "OK",
           inputTokens: 10,
           outputTokens: 2,
+          reasoningTokens: 0,
+          webSearchCalls: 0,
           totalTokens: 12,
+          groundedUrls: [],
         };
       },
     };
@@ -72,11 +75,15 @@ describe("executeAiRequest", () => {
       "createdAt",
       "durationMs",
       "estimatedCostUsd",
+      "estimatedTokenCostUsd",
+      "estimatedToolCostUsd",
       "feature",
       "inputTokens",
       "model",
       "outputTokens",
+      "reasoningTokens",
       "status",
+      "webSearchCalls",
     ]);
     assert.equal(JSON.stringify(records[0]).includes("sensitive input"), false);
   });
@@ -119,5 +126,14 @@ describe("executeAiRequest", () => {
     assert.equal(records[0].status, "FAILURE");
     assert.equal(records[0].estimatedCostUsd, null);
     assert.equal(JSON.stringify(records[0]).includes("private"), false);
+  });
+
+  it("records provider usage and tool cost when a failed operation exposes incurred usage", async () => {
+    const error = Object.assign(new Error("failed after search"), { usage: { inputTokens: 100, outputTokens: 20, reasoningTokens: 5, webSearchCalls: 2 } });
+    const provider: AiProvider = { async createResponse() { throw error; } };
+    const { store, records } = createUsageStore();
+    await assert.rejects(executeAiRequest({ feature: "topic-research", model: "gpt-5.6-terra", input: "input", maxOutputTokens: 100 }, { config, provider, usageStore: store }), AiProviderRequestError);
+    assert.equal(records[0].status, "FAILURE"); assert.equal(records[0].webSearchCalls, 2);
+    assert.equal(records[0].estimatedToolCostUsd, 0.02); assert.ok((records[0].estimatedCostUsd ?? 0) > 0.02);
   });
 });

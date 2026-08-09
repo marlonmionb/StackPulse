@@ -25,17 +25,19 @@ function candidate(id: string, title: string): TechnicalRelevanceCandidate {
 
 function aiResult(classifications: unknown[]): AiExecutionResult {
   return {
-    outputText: JSON.stringify({ classifications }),
+    outputText: JSON.stringify({ classifications }), groundedUrls: [],
     usage: {
       feature: "technical-relevance",
       model: "gpt-5.4-nano",
       inputTokens: 100,
       outputTokens: 50,
+      reasoningTokens: 0,
+      webSearchCalls: 0,
       totalTokens: 150,
       requestedAt: new Date("2026-08-07T12:00:00Z"),
       durationMs: 10,
       status: "SUCCESS",
-      estimatedCostUsd: 0.0000825,
+      estimatedTokenCostUsd: 0.0000825, estimatedToolCostUsd: 0, estimatedCostUsd: 0.0000825,
     },
   };
 }

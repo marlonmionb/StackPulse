@@ -52,6 +52,7 @@ model Topic {
   status                TopicStatus       @default(DISCOVERED)
   discoveredAt          DateTime           @default(now())
   sourceItems           TopicSourceItem[]
+  researches            TopicResearch[]
   posts                 Post[]
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
@@ -87,6 +88,10 @@ model AiUsage {
   model            String
   inputTokens      Int           @default(0)
   outputTokens     Int           @default(0)
+  reasoningTokens  Int           @default(0)
+  webSearchCalls   Int           @default(0)
+  estimatedTokenCostUsd Float?
+  estimatedToolCostUsd  Float?
   estimatedCostUsd Float?
   durationMs       Int
   status           AiUsageStatus
@@ -95,10 +100,62 @@ model AiUsage {
   @@index([createdAt, status])
 }
 
+model TopicResearch {
+  id                    String                @id @default(cuid())
+  topicId               String
+  topic                 Topic                 @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  summary               String
+  whyItMatters          String
+  keyFindings           Json
+  technicalDetails      Json
+  tradeoffs              Json
+  practicalImplications Json
+  openQuestions         Json
+  limitations           Json
+  model                  String
+  webSearchCalls         Int                   @default(0)
+  inputTokens            Int                   @default(0)
+  outputTokens           Int                   @default(0)
+  reasoningTokens       Int                   @default(0)
+  estimatedTokenCostUsd Float?
+  estimatedToolCostUsd  Float?
+  estimatedTotalCostUsd Float?
+  researchedAt          DateTime               @default(now())
+  createdAt             DateTime               @default(now())
+  sources               TopicResearchSource[]
+
+  @@index([topicId, researchedAt])
+}
+
+model TopicResearchSource {
+  id           String                  @id @default(cuid())
+  researchId   String
+  research     TopicResearch           @relation(fields: [researchId], references: [id], onDelete: Cascade)
+  evidenceId   String
+  title        String
+  url          String
+  canonicalUrl String
+  publisher    String?
+  domain       String
+  publishedAt  DateTime?
+  type         TopicResearchSourceType
+  createdAt    DateTime                @default(now())
+
+  @@unique([researchId, evidenceId])
+  @@unique([researchId, canonicalUrl])
+  @@index([researchId])
+}
+
 enum TopicStatus {
   DISCOVERED
   SELECTED
+  RESEARCHED
   ARCHIVED
+}
+
+enum TopicResearchSourceType {
+  PRIMARY
+  SECONDARY
 }
 
 enum PostStatus {
