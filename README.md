@@ -1,6 +1,6 @@
 # StackPulse
 
-StackPulse is a personal content-intelligence platform for discovering, understanding, and turning technical topics into reviewed content. The current version includes multi-source ingestion, lightweight article metadata enrichment, an AI Technical Relevance Gate, semantic Content Kind classification, bounded source-quality-aware Topic Discovery and ranking, explicit human-selected grounded Topic Research, and a version-controlled Author Profile Context for future editorial personalization. Angle generation, drafting, publishing, authentication, and analytics are not implemented yet.
+StackPulse is a personal content-intelligence platform for discovering, understanding, and turning technical topics into reviewed content. The current version includes multi-source ingestion, lightweight article metadata enrichment, an AI Technical Relevance Gate, semantic Content Kind classification, bounded source-quality-aware Topic Discovery and ranking, explicit human-selected grounded Topic Research, a version-controlled Author Profile Context, and persisted Angle Generation with explicit human angle selection. Drafting, publishing, authentication, and analytics are not implemented yet.
 
 ## Current stack
 
@@ -55,6 +55,7 @@ Then open `http://localhost:3000`.
 - `src/modules/topics`: bounded topic candidate selection, semantic grouping, ranking, current-selectability validation, and persistence.
 - `src/modules/topic-research`: explicit single-Topic grounded Web Research, evidence validation, and versioned report persistence.
 - `src/modules/author-profile`: deterministic loading and validation of verified author context and claim boundaries for future editorial stages.
+- `src/modules/angles`: explicit research-versioned Angle Generation, evidence links, history, and human selection.
 - `src/modules/posts`: future drafting and human-review workflows.
 - `src/modules/analytics`: reserved boundary; intentionally empty of domain logic.
 - `src/lib/db`: shared database infrastructure, including the development-safe Prisma Client singleton.
@@ -92,7 +93,7 @@ TopicResearch factual evidence + AuthorProfile verified author context
                               -> Draft Generation
 ```
 
-Author Profile context is editorial personalization only. It does not affect Technical Relevance, Content Kind, Topic Discovery, Topic Ranking, or Topic Research factual synthesis. Angle and Draft Generation are not implemented.
+Author Profile context is editorial personalization only. It does not affect Technical Relevance, Content Kind, Topic Discovery, Topic Ranking, or Topic Research factual synthesis. Angle Generation is implemented; Draft Generation is not.
 
 ## Hacker News ingestion
 
@@ -299,7 +300,10 @@ Topic Discovery & Ranking
         -> human explicitly chooses a Topic ID
         -> bounded grounded Web Research
         -> persisted versioned TopicResearch + TopicResearchSource evidence
-        -> future Angle Generation
+        -> explicit Angle Generation for one TopicResearch ID
+        -> persisted ContentAngle candidates
+        -> explicit human angle selection
+        -> future Draft Generation
 ```
 
 List current selectable ranked Topics, or include preserved historical/non-selectable rows explicitly:
@@ -333,4 +337,26 @@ Official specifications, documentation, release notes, primary project sources, 
 
 Research costs include both model tokens and Web Search tool calls. Pricing is manually maintained in the centralized AI pricing module. The monthly preflight uses estimated total provider cost. A final request may slightly overshoot the remaining application budget because exact final token/tool usage is unknown before execution.
 
-No scheduled or automatic research exists, and no Angle Generation, draft/post generation, or publishing behavior is included.
+No scheduled or automatic research or Angle Generation exists. Draft/post generation and publishing are not included.
+
+## Angle Generation and Human Angle Selection
+
+Angle Generation combines one exact persisted research snapshot with its grounded evidence and the validated Author Profile. Technical facts come from `TopicResearch`; personal-experience claims come from the Author Profile. The profile is loaded through the shared deterministic boundary and represented in persisted angle audit data only by a SHA-256 hash.
+
+```env
+OPENAI_ANGLE_GENERATION_MODEL=gpt-5.6-terra
+ANGLE_GENERATION_MAX_OUTPUT_TOKENS=2500
+ANGLE_GENERATION_COUNT=4
+```
+
+Generate three to five bounded candidates for one explicit research report, list them, and select one manually:
+
+```bash
+npm run angles:generate -- --research-id=<TOPIC_RESEARCH_ID>
+npm run angles:list -- --research-id=<TOPIC_RESEARCH_ID>
+npm run angles:select -- --angle-id=<ANGLE_ID>
+```
+
+Normal generation makes zero AI calls when candidates already exist. `--force` appends a new generation without overwriting previous candidates. Every candidate belongs directly to its exact `TopicResearch` and links relationally to existing `TopicResearchSource` evidence. Angle Generation uses one strict Structured Output request with medium reasoning and no Web Search. It never selects an angle or produces a hook, paragraph, hashtag, CTA, or post.
+
+Only one angle per research report can be `SELECTED`, across all generations. Selecting another candidate transactionally returns the previous selection to `GENERATED`; candidates are never deleted. Future Draft Generation must require that selected angle and its exact research report and must not independently choose another angle. Draft Generation is not implemented.

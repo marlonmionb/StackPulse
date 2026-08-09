@@ -15,6 +15,7 @@ src/
     topics/             # implemented discovery, grouping, ranking, and persistence
     topic-research/     # explicit grounded research and versioned evidence
     author-profile/     # verified author context for future editorial stages
+    angles/             # research-versioned editorial plans and human selection
     posts/              # reserved for future content workflows
     analytics/          # reserved for future performance analysis
   lib/
@@ -105,7 +106,7 @@ Topic Discovery / Ranking
         -> canonical URL consolidation + internal source IDs
         -> no-search strict Structured synthesis
         -> transactional TopicResearch + TopicResearchSource + RESEARCHED lifecycle
-        -> future Angle Generation
+        -> explicit Angle Generation for one research ID
 ```
 
 Current selectability reuses `isEligibleForTopicDiscovery` over a Topic's present SourceItem relationships. It requires at least one currently eligible supporting item and an allowed lifecycle (`DISCOVERED`, `SELECTED`, or `RESEARCHED`). This derived state does not replace editorial lifecycle. Historical rows with only ineligible support remain persisted and appear only under explicit historical listing; archived lifecycle is reported separately.
@@ -135,14 +136,35 @@ TopicResearch  -> What grounded evidence supports the technical subject?
 AuthorProfile  -> What can this author credibly claim about personal experience?
 
 TopicResearch + AuthorProfile
-            -> future Angle Generation
+            -> Angle Generation
             -> human angle selection
             -> future Draft Generation
 ```
 
-Future Angle Generation must distinguish a strong verified professional connection, a personal-project connection, a learning/exploration connection, and no personal connection. With no connection, a useful technical explanation or trade-off analysis is valid and preferable to an invented anecdote. Project experience must remain framed as project experience, and learning must never imply production expertise. Future Draft Generation must run only after human angle selection.
+Angle Generation distinguishes a strong verified professional connection, a personal-project connection, a learning/exploration connection, and no personal connection. With no connection, a useful technical explanation or trade-off analysis is valid and preferable to an invented anecdote. Project experience remains framed as project experience, and learning never implies production expertise. Future Draft Generation must run only after human angle selection.
 
-This is an editorial/personalization boundary. Author Profile context must not affect Technical Relevance, Content Kind, Topic Discovery, Topic Ranking, or Topic Research factual synthesis. Technical claims remain grounded in the selected TopicResearch report and its evidence. Angle Generation, angle selection, and Draft Generation remain unimplemented.
+This is an editorial/personalization boundary. Author Profile context does not affect Technical Relevance, Content Kind, Topic Discovery, Topic Ranking, or Topic Research factual synthesis. Technical claims remain grounded in the selected TopicResearch report and its evidence. Angle Generation and angle selection are implemented; Draft Generation remains unimplemented.
+
+## Angle Generation and human selection
+
+```text
+one exact TopicResearch + its TopicResearchSource evidence
+                     + validated AuthorProfile
+                     -> one bounded no-search Structured Output request
+                     -> transactional ContentAngle candidate set
+                     -> explicit human selection
+                     -> future Draft Generation
+```
+
+The command requires a `TopicResearch` ID and validates the report, parent Topic, evidence, Author Profile, feature configuration, model pricing, and monthly budget before provider execution. Existing candidates cause a zero-request skip unless `--force` deliberately creates a new generation. A UUID shared by all candidates in one call provides append-only generation history; no generation table is needed for the MVP.
+
+`ContentAngle` belongs to exactly one `TopicResearch`, stores its author-connection enum, fit score, optional human-input question, concise claim-boundary notes, model, status, and the SHA-256 hash of the loaded profile. It never stores the full profile. `ContentAngleSource` provides relational integrity to existing `TopicResearchSource` rows; prompt and output contracts use their application-owned `evidenceId` values rather than introducing another source identity.
+
+The dedicated prompt labels research and profile context separately. TopicResearch is the only technical factual source, while AuthorProfile is the only personal-experience source. Runtime validation enforces exact candidate count, controlled connection and status values, score/text bounds, known unique evidence IDs, evidence presence, distinct normalized titles/theses, and human-input field consistency. Semantic author fit and uncertainty preservation remain prompt-enforced rather than guessed with keyword rules.
+
+Selection performs no AI call. In one SQLite transaction it returns any selected angle for the same research report to `GENERATED` and marks the explicit angle `SELECTED`; candidates belonging to other research reports are untouched. Exactly one selection therefore applies across forced generations. No angle is automatically selected or deleted.
+
+Future Draft Generation must require the selected `ContentAngle`, its exact referenced `TopicResearch`, a validated Author Profile, the angle's claim-boundary notes, and any optional human context collected by a future feature. It must not choose a different angle. Draft Generation is not implemented.
 
 ## Persistence
 

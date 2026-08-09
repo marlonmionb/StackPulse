@@ -21,16 +21,19 @@ npm run author-profile:validate
 
 ```text
 TopicResearch factual evidence + AuthorProfile verified author context
-                              -> future Angle Generation
+                              -> Angle Generation
                               -> human angle selection
                               -> future Draft Generation
 ```
 
-Future Angle Generation must distinguish strong professional connections,
+Angle Generation distinguishes strong professional connections,
 personal-project connections, learning/exploration connections, and topics with
 no verified personal connection. No connection is a valid outcome: the model
 should suggest a useful technical approach instead of inventing an anecdote.
-Draft Generation must occur only after a human selects an angle.
+It passes the validated prompt-ready Markdown through the existing
+`loadAuthorProfile()` boundary and persists only a deterministic SHA-256 hash,
+not the full profile. Draft Generation must occur only after a human selects an
+angle and remains unimplemented.
 
 The profile is editorial/personalization context only. It does not affect
 Technical Relevance, Content Kind, Topic Discovery, Topic Ranking, or Topic

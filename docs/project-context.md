@@ -55,9 +55,9 @@ Ingestion discovers and stores normalized source data. Metadata enrichment is a 
 
 `docs/author-profile.md` is a manually maintained, version-controlled source of professional/technical author context. It records verified professional experience, separately labeled personal-project experience, current learning/exploration, positioning, content goals, and explicit claim boundaries. It intentionally excludes contact information and unrelated personal details.
 
-TopicResearch provides factual technical evidence. AuthorProfile provides verified context about what the author can credibly say about personal experience. Future Angle Generation will combine one explicit TopicResearch report and its evidence with the Author Profile, then distinguish strong professional, personal-project, learning/exploration, and no-personal-connection cases. No personal connection is valid and must produce a useful technical angle without a fabricated story. Future Draft Generation will occur only after a human selects an angle.
+TopicResearch provides factual technical evidence. AuthorProfile provides verified context about what the author can credibly say about personal experience. Implemented Angle Generation combines one explicit TopicResearch report and its evidence with the Author Profile, then distinguishes professional, personal-project, learning/exploration, and technical-only cases. No personal connection is valid and produces a useful technical angle without a fabricated story. Future Draft Generation will occur only after a human selects one persisted angle.
 
-The Author Profile is editorial context only. It does not influence Technical Relevance, Content Kind, Topic Discovery, Topic Ranking, or Topic Research factual synthesis. It is not persisted in the database and is loaded without an AI call. Angle Generation, human angle selection, and Draft Generation are not implemented.
+The Author Profile is editorial context only. It does not influence Technical Relevance, Content Kind, Topic Discovery, Topic Ranking, or Topic Research factual synthesis. It is not persisted in the database and is loaded without an AI call; Angle rows retain only a deterministic profile hash. Angle Generation and human angle selection are implemented. Draft Generation is not.
 
 ## AI stages
 
@@ -83,5 +83,7 @@ The domain questions remain distinct:
 - Topic Discovery: what meaningful technical opportunities are supported by suitable sources?
 - Topic Ranking: which opportunities deserve priority?
 - Topic Research: independently verify and deepen one explicitly human-selected Topic using grounded evidence.
+- Angle Generation: propose distinct, evidence-linked editorial perspectives from one exact TopicResearch plus verified author context.
+- Human Angle Selection: choose one exact persisted ContentAngle without an AI call.
 
 Current selectability is derived from each Topic's present supporting SourceItems through the centralized Topic Discovery policy. Historical Topics are preserved, but Topics with only now-ineligible support are not offered for new research by default. Research may use a product page as attributed evidence of a vendor claim; it does not restore product pages as Topic Discovery signals or treat marketing as independent proof.

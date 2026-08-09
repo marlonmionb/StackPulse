@@ -123,6 +123,7 @@ model TopicResearch {
   researchedAt          DateTime               @default(now())
   createdAt             DateTime               @default(now())
   sources               TopicResearchSource[]
+  angles                ContentAngle[]
 
   @@index([topicId, researchedAt])
 }
@@ -140,10 +141,47 @@ model TopicResearchSource {
   publishedAt  DateTime?
   type         TopicResearchSourceType
   createdAt    DateTime                @default(now())
+  angles       ContentAngleSource[]
 
   @@unique([researchId, evidenceId])
   @@unique([researchId, canonicalUrl])
   @@index([researchId])
+}
+
+model ContentAngle {
+  id                   String                    @id @default(cuid())
+  topicResearchId      String
+  topicResearch        TopicResearch             @relation(fields: [topicResearchId], references: [id], onDelete: Cascade)
+  generationId         String
+  title                String
+  thesis               String
+  authorConnectionType AuthorConnectionType
+  whyItFitsAuthor      String
+  fitScore             Int
+  requiresHumanInput   Boolean                   @default(false)
+  humanInputPrompt     String?
+  claimBoundaryNotes   String
+  authorProfileHash    String
+  status               ContentAngleStatus        @default(GENERATED)
+  model                String
+  generatedAt          DateTime                  @default(now())
+  createdAt            DateTime                  @default(now())
+  supportingSources    ContentAngleSource[]
+
+  @@index([topicResearchId, generatedAt])
+  @@index([topicResearchId, status])
+  @@index([generationId])
+}
+
+model ContentAngleSource {
+  angleId          String
+  researchSourceId String
+  angle           ContentAngle        @relation(fields: [angleId], references: [id], onDelete: Cascade)
+  researchSource  TopicResearchSource @relation(fields: [researchSourceId], references: [id], onDelete: Cascade)
+  createdAt       DateTime             @default(now())
+
+  @@id([angleId, researchSourceId])
+  @@index([researchSourceId])
 }
 
 enum TopicStatus {
@@ -156,6 +194,18 @@ enum TopicStatus {
 enum TopicResearchSourceType {
   PRIMARY
   SECONDARY
+}
+
+enum AuthorConnectionType {
+  PROFESSIONAL_EXPERIENCE
+  PERSONAL_PROJECT
+  LEARNING_EXPLORATION
+  TECHNICAL_ONLY
+}
+
+enum ContentAngleStatus {
+  GENERATED
+  SELECTED
 }
 
 enum PostStatus {
